@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2011-2025 Intel Corporation
+ * Copyright(c) 2011-2026 Intel Corporation
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -317,78 +317,6 @@ static std::string byte_to_hexstring(const uint8_t* data, size_t len, bool big_e
     }
     return bytesToHexString(tmp_vec);
 
-}
-
-#define TCB_COMPONENT_LEN   16
-
-static bool isTdxTcbHigherOrEqual(const Quote& quote,
-                           const parser::json::TcbLevel& tcbLevel)
-{
-    const auto& teeTcbSvn = quote.getTeeTcbSvn();
-    uint32_t index = 0;
-    if (quote.getHeader().version > constants::QUOTE_VERSION_3 && teeTcbSvn[1] > 0)
-    {
-        index = 2;
-    }
-    for(; index < TCB_COMPONENT_LEN; ++index)
-    {
-        const auto componentValue = teeTcbSvn[index];
-        const auto& otherComponentValue = tcbLevel.getTdxTcbComponent(index);
-        if(componentValue < otherComponentValue.getSvn())
-        {
-            // If *ANY* TCB component SVN is lower than TCB level is considered lower
-            return false;
-        }
-    }
-    // but for TCB level to be considered higher it requires *EVERY* SVN to be higher or equal
-    return true;
-}
-
-static bool isTcbComponentSvnHigherOrEqual(const parser::x509::PckCertificate& pckCert,
-                           const parser::json::TcbLevel& tcbLevel)
-{
-    for(uint32_t index = 0; index < TCB_COMPONENT_LEN; ++index)
-    {
-        const auto componentValue = pckCert.getTcb().getSgxTcbComponentSvn(index);
-        const auto otherComponentValue = tcbLevel.getSgxTcbComponentSvn(index);
-        if(componentValue < otherComponentValue)
-        {
-            // If *ANY* TCB component SVN is lower than TCB component SVN is considered lower
-            return false;
-        }
-    }
-    // but for TCB component SVN to be considered higher it requires that *EVERY* TCB component SVN to be higher or equal
-    return true;
-}
-
-const json::TcbLevel& getMatchingTcbLevel(const json::TcbInfo *tcbInfo,
-                            const x509::PckCertificate &pckCert,
-                            const Quote &quote)
-{
-    const auto &tcbs = tcbInfo->getTcbLevels();
-    const auto certPceSvn = pckCert.getTcb().getPceSvn();
-
-    for (const auto& tcb : tcbs)
-    {
-        if(isTcbComponentSvnHigherOrEqual(pckCert, tcb) && certPceSvn >= tcb.getPceSvn())
-        {
-            if (tcbInfo->getVersion() >= 3 &&
-                tcbInfo->getId() == parser::json::TcbInfo::TDX_ID &&
-                quote.getHeader().teeType == constants::TEE_TYPE_TDX)
-            {
-                if (isTdxTcbHigherOrEqual(quote, tcb))
-                {
-                    return tcb;
-                }
-            }
-            else
-            {
-                return tcb;
-            }
-        }
-    }
-
-    throw SGX_QL_TCBINFO_UNSUPPORTED_FORMAT;
 }
 
 #ifdef SERVTD_ATTEST
@@ -932,7 +860,7 @@ static quote3_error_t qve_set_quote_supplemental_data(const Quote &quote,
             //platform TCB level date
             supplemental_data->platform_tcb_level_date_tag = matching_tcb_info_tcb_date;
 
-            supplemental_data->tcb_level_date_tag = (matching_tcb_info_tcb_date < qe_identity_date) ? matching_tcb_info_tcb_date : qe_identity_date;
+            supplemental_data->tcb_level_date_tag = getEarlierDate(matching_tcb_info_tcb_date, qe_identity_date);
 
         }
 

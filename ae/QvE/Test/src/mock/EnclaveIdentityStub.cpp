@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2025 Intel Corporation
+ * Copyright(c) 2025-2026 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -87,4 +87,4 @@ namespace intel { namespace sgx { namespace dcap { namespace parser { namespace 
     {
         return IdentityTcbLevel(0, 0, TcbStatus::UpToDate, std::vector<std::string>{});
     }
-}}}}}
+}}}}} // namespace intel::sgx::dcap::parser::json

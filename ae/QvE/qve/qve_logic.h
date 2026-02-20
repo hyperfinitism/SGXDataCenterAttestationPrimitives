@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2025 Intel Corporation
+ * Copyright(c) 2025-2026 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -172,5 +172,13 @@ time_t getLatestIssueDate(const CertificateChain &chain);
 time_t getEarliestExpirationDate(const CertificateChain &chain);
 
 quote3_error_t deserializeVerCollatInfo(const std::vector<uint8_t> &bytes, verification_collateral_info_t &info);
+
+bool isTdxTcbHigherOrEqual(const intel::sgx::dcap::Quote& quote, const parser::json::TcbLevel& tcbLevel);
+bool isTcbComponentSvnHigherOrEqual(const parser::x509::PckCertificate& pckCert, const parser::json::TcbLevel& tcbLevel);
+const json::TcbLevel& getMatchingTcbLevel(const json::TcbInfo *tcbInfo,
+                            const x509::PckCertificate &pckCert,
+                            const intel::sgx::dcap::Quote &quote);
+
+time_t getEarlierDate(const time_t& date1, const time_t& date2);
 
 #endif //_QVE_UTILS_H

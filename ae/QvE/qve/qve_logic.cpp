@@ -1,11 +1,14 @@
 /*
- * Copyright(c) 2025 Intel Corporation
+ * Copyright(c) 2025-2026 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "PckParser/CrlStore.h"
 #include "qve_logic.h"
 
+namespace {
+    constexpr uint32_t kTcbComponentLen = 16;
+}
 
 time_t getEarliestIssueDate(const CertificateChain &chain) {
     auto certs = chain.getCerts();
@@ -142,4 +145,79 @@ quote3_error_t deserializeVerCollatInfo(const std::vector<uint8_t> &bytes, verif
     }
 
     return SGX_QL_SUCCESS;
+}
+
+bool isTdxTcbHigherOrEqual(const Quote& quote,
+                           const parser::json::TcbLevel& tcbLevel)
+{
+    const auto& teeTcbSvn = quote.getTeeTcbSvn();
+    uint32_t index = 0;
+    if (quote.getHeader().version > intel::sgx::dcap::constants::QUOTE_VERSION_3 && teeTcbSvn[1] > 0)
+    {
+        index = 2;
+    }
+    for(; index < kTcbComponentLen; ++index)
+    {
+        const auto componentValue = teeTcbSvn[index];
+        const auto& otherComponentValue = tcbLevel.getTdxTcbComponent(index);
+        if(componentValue < otherComponentValue.getSvn())
+        {
+            // If *ANY* TCB component SVN is lower than TCB level is considered lower
+            return false;
+        }
+    }
+    // but for TCB level to be considered higher it requires *EVERY* SVN to be higher or equal
+    return true;
+}
+
+bool isTcbComponentSvnHigherOrEqual(const parser::x509::PckCertificate& pckCert,
+                           const parser::json::TcbLevel& tcbLevel)
+{
+    for(uint32_t index = 0; index < kTcbComponentLen; ++index)
+    {
+        const auto componentValue = pckCert.getTcb().getSgxTcbComponentSvn(index);
+        const auto otherComponentValue = tcbLevel.getSgxTcbComponentSvn(index);
+        if(componentValue < otherComponentValue)
+        {
+            // If *ANY* TCB component SVN is lower than TCB component SVN is considered lower
+            return false;
+        }
+    }
+    // but for TCB component SVN to be considered higher it requires that *EVERY* TCB component SVN to be higher or equal
+    return true;
+}
+
+const json::TcbLevel& getMatchingTcbLevel(const json::TcbInfo *tcbInfo,
+                            const x509::PckCertificate &pckCert,
+                            const Quote &quote)
+{
+    const auto &tcbs = tcbInfo->getTcbLevels();
+    const auto certPceSvn = pckCert.getTcb().getPceSvn();
+
+    for (const auto& tcb : tcbs)
+    {
+        if(isTcbComponentSvnHigherOrEqual(pckCert, tcb) && certPceSvn >= tcb.getPceSvn())
+        {
+            if (tcbInfo->getVersion() >= 3 &&
+                tcbInfo->getId() == parser::json::TcbInfo::TDX_ID &&
+                quote.getHeader().teeType == intel::sgx::dcap::constants::TEE_TYPE_TDX)
+            {
+                if (isTdxTcbHigherOrEqual(quote, tcb))
+                {
+                    return tcb;
+                }
+            }
+            else
+            {
+                return tcb;
+            }
+        }
+    }
+
+    throw SGX_QL_TCBINFO_UNSUPPORTED_FORMAT;
+}
+
+time_t getEarlierDate(const time_t& date1, const time_t& date2)
+{
+    return (date1 < date2) ? date1 : date2;
 }
