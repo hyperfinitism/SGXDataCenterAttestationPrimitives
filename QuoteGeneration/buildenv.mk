@@ -86,6 +86,7 @@ CC_NO_LESS_THAN_8 := $(shell [ $(CC_VERSION_MAJOR) -ge 8 ] && echo 1 || echo 0)
 CC_NO_LESS_THAN_9 := $(shell [ $(CC_VERSION_MAJOR) -ge 9 ] && echo 1 || echo 0)
 CC_NO_LESS_THAN_11 := $(shell [ $(CC_VERSION_MAJOR) -ge 11 ] && echo 1 || echo 0)
 CC_NO_LESS_THAN_12 := $(shell [ $(CC_VERSION_MAJOR) -ge 12 ] && echo 1 || echo 0)
+CC_LESS_THAN_15 := $(shell [ $(CC_VERSION_MAJOR) -lt 15 ] && echo 1 || echo 0)
 
 
 ifeq ($(IS_GCC)$(CC_NO_LESS_THAN_12), 11)

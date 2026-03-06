@@ -29,7 +29,11 @@ DEPENDS = ${QGS_OBJS test_client.o:.o=.d}
 QGS_LFLAGS = -L$(TOP_DIR)/build/linux -lsgx_tdx_logic -lsgx_pce_logic -ldl \
              -L$(SGX_SDK)/lib64 -lsgx_urts -g
 # add boost_system for link
-QGS_LFLAGS += -lboost_system -lboost_thread -lpthread
+ifeq ($(CC_LESS_THAN_15), 1)
+QGS_LFLAGS += -lboost_system
+endif
+QGS_LFLAGS += -lboost_thread -lpthread
+
 # add qgs_msg_lib for link
 QGS_LFLAGS += -L../qgs_msg_lib/linux -lqgs_msg
 

@@ -43,7 +43,7 @@ namespace intel { namespace sgx { namespace dcap { namespace qgs {
 
     class QgsServer {
     public:
-      QgsServer(asio::io_service &io_service, gs::endpoint &ep, uint8_t num_threads);
+      QgsServer(asio::io_context &io_context, gs::endpoint &ep, uint8_t num_threads);
       ~QgsServer();
       void shutdown();
 
