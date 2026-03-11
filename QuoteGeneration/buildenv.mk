@@ -63,12 +63,20 @@ CUR_DIR := $(realpath $(call parent-dir,$(lastword $(wordlist 2,$(words $(MAKEFI
 CET_FLAGS :=
 
 # Compiler detection
-define check_compiler
-    $(shell $(1) -dM -E - < /dev/null 2>/dev/null | grep -q $(2) && echo 1 || echo 0)
-endef
+check_compiler = $(shell $(1) -dM -E - < /dev/null 2>/dev/null | grep -q $(2) && echo 1 || echo 0)
 
 IS_CLANG := $(call check_compiler,$(CC),__clang__)
-IS_GCC := $(call check_compiler,$(CC),__GNUC__)
+ifeq ($(IS_CLANG), 1)
+    IS_GCC := 0
+else
+    IS_GCC := $(call check_compiler,$(CC),__GNUC__)
+endif
+
+ifneq ($(IS_CLANG), 1)
+    ifneq ($(IS_GCC), 1)
+        $(error No GCC or Clang compiler found)
+    endif
+endif
 
 ifeq ($(IS_CLANG), 1)
     # For Clang: parse --version
