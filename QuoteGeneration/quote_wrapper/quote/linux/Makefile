@@ -75,10 +75,10 @@ $(BUILD_DIR):
 	@$(MKDIR) $@
 
 $(QE3_Signed_Name): force_look
-	@make -C $(QE3_Dir)
+	+@$(MAKE) -C $(QE3_Dir)
 
 $(ID_ENCLAVE_Signed_Name): force_look
-	@make -C $(ID_ENCLAVE_Dir)
+	+@$(MAKE) -C $(ID_ENCLAVE_Dir)
 
 force_look:
 	true
@@ -87,6 +87,6 @@ force_look:
 
 clean:
 	@$(RM) .config_* $(Quote_Name) $(Quote_C_Objects) $(Quote_Cpp_Objects) qe3_u.* id_enclave_u.* $(BUILD_DIR)/$(Quote_Name)
-	@make -C $(QE3_Dir) clean
-	@make -C $(ID_ENCLAVE_Dir) clean
+	+@$(MAKE) -C $(QE3_Dir) clean
+	+@$(MAKE) -C $(ID_ENCLAVE_Dir) clean
 

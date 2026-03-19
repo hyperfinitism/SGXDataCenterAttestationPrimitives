@@ -8,6 +8,10 @@ BUILDENV_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 include $(BUILDENV_DIR)/version.mk
 
+JOBS_FLAG = $(findstring -j,$(MAKEFLAGS))
+NUM_JOBS = $(patsubst -j%,%,$(filter -j%,$(MAKEFLAGS)))
+MAKE_PARALLEL_JOBS = $(strip $(if $(JOBS_FLAG),$(if $(NUM_JOBS),-j$(NUM_JOBS),-j)))
+
 CP    := cp -f
 LN    := ln -sf
 MKDIR := mkdir -p

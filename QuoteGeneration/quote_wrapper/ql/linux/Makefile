@@ -66,10 +66,10 @@ $(QL_Lib_Name_Dynamic): $(QL_Lib_Cpp_Objects) $(QL_Lib_C_Objects) $(PCE_Library)
 	$(CXX) $(CXXFLAGS) $(QL_Lib_Cpp_Objects) $(QL_Lib_C_Objects) -shared -Wl,-soname=$(QL_Lib_Name_Dynamic_Major) $(LDUFLAGS) $(QL_Lib_Link_Flags) -o $@
 
 $(Quote_Library): force_look
-	@make -C $(Quote_Library_Dir)
+	+@$(MAKE) -C $(Quote_Library_Dir)
 
 $(PCE_Library): force_look
-	@make -C $(PCE_Library_Dir)
+	+@$(MAKE) -C $(PCE_Library_Dir)
 
 force_look:
 	true
@@ -79,5 +79,5 @@ force_look:
 clean:
 	@$(RM) .config_* $(QL_Lib_Name) $(QL_Lib_Cpp_Objects) $(QL_Lib_Cpp_Deps) $(QL_Lib_Name_Dynamic) \
 		$(addprefix $(BUILD_DIR)/,$(QL_Lib_Name_Dynamic) $(QL_Lib_Name_Dynamic_Full) $(QL_Lib_Name_Dynamic_Major))
-	@make -C $(Quote_Library_Dir) clean
-	@make -C $(PCE_Library_Dir)   clean
+	+@$(MAKE) -C $(Quote_Library_Dir) clean
+	+@$(MAKE) -C $(PCE_Library_Dir)   clean

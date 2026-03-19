@@ -4,6 +4,7 @@
 #
 
 .PHONY: default all
+.NOTPARALLEL:
 default: all
 
 all: deb_sgx_pcs_client_pkg rpm_sgx_pcs_client_pkg

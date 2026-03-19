@@ -44,8 +44,8 @@ vpath %.c $(COMMON_DIR)/src
 all: qgs test_client
 
 qgs: $(QGS_OBJS)
-	make -C ../qgs_msg_lib/linux
-	make -C ../tdx_quote/linux
+	+$(MAKE) -C ../qgs_msg_lib/linux
+	+$(MAKE) -C ../tdx_quote/linux
 	$(CXX) -o $@ $^ $(COMMON_LDFLAGS) $(QGS_LFLAGS)
 
 test_client: test_client.o
@@ -58,8 +58,8 @@ test_client: test_client.o
 	$(CC) -c $(QGS_CFLAGS) $<
 
 clean:
-	make -C ../qgs_msg_lib/linux clean
-	make -C ../tdx_quote/linux clean
+	+$(MAKE) -C ../qgs_msg_lib/linux clean
+	+$(MAKE) -C ../tdx_quote/linux clean
 	rm -f *.d
 	rm -f *.o
 	rm -f qgs

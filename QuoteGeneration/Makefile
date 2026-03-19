@@ -35,22 +35,22 @@ opt_check_failed:
 	@exit 3
 
 pce_logic:
-	$(MAKE) -C pce_wrapper/linux
+	+$(MAKE) -C pce_wrapper/linux
 
 qe3_logic: pce_logic
-	$(MAKE) -C quote_wrapper/ql/linux
+	+$(MAKE) -C quote_wrapper/ql/linux
 
 qcnl_wrapper:
-	$(MAKE) -C qcnl/linux
+	+$(MAKE) -C qcnl/linux
 
 qpl_wrapper: qcnl_wrapper
-	$(MAKE) -C qpl/linux
+	+$(MAKE) -C qpl/linux
 
 qve_wrapper:
-	$(MAKE) -C ../QuoteVerification
+	+$(MAKE) -C ../QuoteVerification
 
 servtd_attest:
-	$(MAKE) -C quote_wrapper/servtd_attest/linux SERVTD_ATTEST=1
+	+$(MAKE) -C quote_wrapper/servtd_attest/linux SERVTD_ATTEST=1
 
 .PHONY: deb_sgx_dcap_ql_pkg
 deb_sgx_dcap_ql_pkg: $(CHECK_OPT) pce_logic qe3_logic
@@ -66,11 +66,11 @@ deb_sgx_dcap_default_qpl_pkg: qcnl_wrapper qpl_wrapper
 
 .PHONY: deb_sgx_dcap_pccs_pkg
 deb_sgx_dcap_pccs_pkg:
-	$(MAKE) -C pccs deb_sgx_dcap_pccs_pkg PCCS_VERSION=$(DCAP_VER)
+	+$(MAKE) -C pccs deb_sgx_dcap_pccs_pkg PCCS_VERSION=$(DCAP_VER)
 
 .PHONY: deb_pccs_admin_tool_pkg
 deb_pccs_admin_tool_pkg:
-	$(MAKE) -C pccs deb_pccs_admin_tool_pkg PCCS_ADMIN_TOOL_VERSION=$(DCAP_VER)
+	+$(MAKE) -C pccs deb_pccs_admin_tool_pkg PCCS_ADMIN_TOOL_VERSION=$(DCAP_VER)
 
 .PHONY: deb_sgx_ae_qe3_pkg
 deb_sgx_ae_qe3_pkg: $(CHECK_OPT)
@@ -96,13 +96,13 @@ tdx_attest deb_sgx_tdx_attest_pkg:
 	echo "Skip tdx_attest in ubuntu 18.04"
 else
 qgs_msg_lib:
-	$(MAKE) -C quote_wrapper/qgs_msg_lib/linux
+	+$(MAKE) -C quote_wrapper/qgs_msg_lib/linux
 tdx_logic: pce_logic
-	$(MAKE) -C quote_wrapper/tdx_quote/linux
+	+$(MAKE) -C quote_wrapper/tdx_quote/linux
 tdx_qgs: tdx_logic qgs_msg_lib
-	$(MAKE) -C quote_wrapper/qgs
+	+$(MAKE) -C quote_wrapper/qgs
 tdx_attest: qgs_msg_lib
-	$(MAKE) -C quote_wrapper/tdx_attest/linux
+	+$(MAKE) -C quote_wrapper/tdx_attest/linux
 deb_sgx_ae_tdqe_pkg: $(CHECK_OPT)
 	./installer/linux/deb/libsgx-ae-tdqe/build.sh
 deb_sgx_tdx_logic_pkg: tdx_logic
@@ -123,16 +123,16 @@ deb_sgx_pce_logic_pkg: pce_logic
 
 .PHONY: deb_sgx_pck_id_retrieval_tool_pkg
 deb_sgx_pck_id_retrieval_tool_pkg:
-	$(MAKE) -C ../tools/PCKRetrievalTool/
+	+$(MAKE) -C ../tools/PCKRetrievalTool/
 	../tools/PCKRetrievalTool/installer/deb/sgx-pck-id-retrieval-tool/build.sh
 
 .PHONY: deb_sgx_ra_service_pkg
 deb_sgx_ra_service_pkg:
-	$(MAKE) -C ../tools/SGXPlatformRegistration/ deb_pkg
+	+$(MAKE) -C ../tools/SGXPlatformRegistration/ deb_pkg
 
 .PHONY: deb_tee_appraisal_tool_pkg
 deb_tee_appraisal_tool_pkg:
-	$(MAKE) -C ../QuoteVerification tee_appraisal_tool
+	+$(MAKE) -C ../QuoteVerification tee_appraisal_tool
 	./installer/linux/deb/tee-appraisal-tool/build.sh
 
 .PHONY: deb_sgx_ae_qae_pkg
@@ -161,11 +161,11 @@ rpm_sgx_dcap_default_qpl_pkg: qcnl_wrapper qpl_wrapper
 
 .PHONY: rpm_sgx_dcap_pccs_pkg
 rpm_sgx_dcap_pccs_pkg:
-	$(MAKE) -C pccs rpm_sgx_dcap_pccs_pkg PCCS_VERSION=$(DCAP_VER)
+	+$(MAKE) -C pccs rpm_sgx_dcap_pccs_pkg PCCS_VERSION=$(DCAP_VER)
 
 .PHONY: rpm_pccs_admin_tool_pkg
 rpm_pccs_admin_tool_pkg:
-	$(MAKE) -C pccs rpm_pccs_admin_tool_pkg PCCS_ADMIN_TOOL_VERSION=$(DCAP_VER)
+	+$(MAKE) -C pccs rpm_pccs_admin_tool_pkg PCCS_ADMIN_TOOL_VERSION=$(DCAP_VER)
 
 .PHONY: rpm_sgx_ae_qe3_pkg
 rpm_sgx_ae_qe3_pkg: $(CHECK_OPT)
@@ -209,16 +209,16 @@ rpm_sgx_pce_logic_pkg: pce_logic
 
 .PHONY: rpm_sgx_pck_id_retrieval_tool_pkg
 rpm_sgx_pck_id_retrieval_tool_pkg:
-	$(MAKE) -C ../tools/PCKRetrievalTool/
+	+$(MAKE) -C ../tools/PCKRetrievalTool/
 	../tools/PCKRetrievalTool/installer/rpm/sgx-pck-id-retrieval-tool/build.sh
 
 .PHONY: rpm_sgx_ra_service_pkg
 rpm_sgx_ra_service_pkg:
-	$(MAKE) -C ../tools/SGXPlatformRegistration/ rpm_pkg
+	+$(MAKE) -C ../tools/SGXPlatformRegistration/ rpm_pkg
 
 .PHONY: rpm_tee_appraisal_tool_pkg
 rpm_tee_appraisal_tool_pkg:
-	$(MAKE) -C ../QuoteVerification tee_appraisal_tool
+	+$(MAKE) -C ../QuoteVerification tee_appraisal_tool
 	./installer/linux/rpm/tee-appraisal-tool/build.sh
 
 .PHONY: rpm_sgx_ae_qae_pkg
@@ -237,19 +237,19 @@ rpm_pkg: rpm_sgx_dcap_ql_pkg rpm_sgx_dcap_default_qpl_pkg rpm_sgx_dcap_pccs_pkg 
 	cp `find ./pccs/build_infrastructure/installer/linux/rpm/ -name "*.rpm"`  ./installer/linux/rpm/
 
 clean:
-	$(MAKE) -C pce_wrapper/linux clean
-	$(MAKE) -C quote_wrapper/ql/linux clean
-	$(MAKE) -C quote_wrapper/qgs clean
-	$(MAKE) -C quote_wrapper/tdx_quote/linux clean
-	$(MAKE) -C quote_wrapper/tdx_attest/linux clean
-	$(MAKE) -C quote_wrapper/tdx_verify/linux clean
-	$(MAKE) -C quote_wrapper/servtd_attest/linux clean
-	$(MAKE) -C qcnl/linux clean
-	$(MAKE) -C qpl/linux clean
-	$(MAKE) -C ../QuoteVerification clean
-	$(MAKE) -C ../tools/PCKRetrievalTool clean
-	$(MAKE) -C ../tools/SGXPlatformRegistration clean
-	$(MAKE) -C pccs clean
+	+$(MAKE) -C pce_wrapper/linux clean
+	+$(MAKE) -C quote_wrapper/ql/linux clean
+	+$(MAKE) -C quote_wrapper/qgs clean
+	+$(MAKE) -C quote_wrapper/tdx_quote/linux clean
+	+$(MAKE) -C quote_wrapper/tdx_attest/linux clean
+	+$(MAKE) -C quote_wrapper/tdx_verify/linux clean
+	+$(MAKE) -C quote_wrapper/servtd_attest/linux clean
+	+$(MAKE) -C qcnl/linux clean
+	+$(MAKE) -C qpl/linux clean
+	+$(MAKE) -C ../QuoteVerification clean
+	+$(MAKE) -C ../tools/PCKRetrievalTool clean
+	+$(MAKE) -C ../tools/SGXPlatformRegistration clean
+	+$(MAKE) -C pccs clean
 	@$(RM) -r ./build/
 	@$(RM) ./installer/linux/deb/*.deb
 	@$(RM) ./installer/linux/deb/*.ddeb
@@ -286,5 +286,5 @@ clean:
 	./installer/linux/rpm/libsgx-ae-qae/clean.sh
 
 rebuild:
-	$(MAKE) -f $(CUR_MKFILE) clean
-	$(MAKE) -f $(CUR_MKFILE)
+	+$(MAKE) -f $(CUR_MKFILE) clean
+	+$(MAKE) -f $(CUR_MKFILE)

@@ -61,20 +61,28 @@ if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
 fi
 
 
-if [ "$1" = "nobuild" ]; then
-  exit 0
-fi
-
 pushd $sgxssl_dir/Linux/
-if [[ "$*" == *SERVTD_ATTEST* ]];then
-  make clean sgxssl_no_mitigation NO_THREADS=1 LINUX_SGX_BUILD=2 SERVTD_ATTEST=1
-else
-  if [[ "$*" == *FIPS* ]];then
-    make clean sgxssl_no_mitigation FIPS=1
-  else
-    make clean sgxssl_no_mitigation
-  fi
-fi
+case $1 in
+    "nobuild")
+        ;;
+    "clean")
+        make $MAKE_PARALLEL_JOBS clean
+        ;;
+    "cleanbuild")
+        make $MAKE_PARALLEL_JOBS clean
+        ;&
+    *)
+        if [[ "$*" == *SERVTD_ATTEST* ]];then
+            make $MAKE_PARALLEL_JOBS sgxssl_no_mitigation NO_THREADS=1 LINUX_SGX_BUILD=2 SERVTD_ATTEST=1;
+        else
+            if [[ "$*" == *FIPS* ]];then
+                make $MAKE_PARALLEL_JOBS sgxssl_no_mitigation FIPS=1;
+            else
+                make $MAKE_PARALLEL_JOBS sgxssl_no_mitigation;
+            fi
+        fi
+        ;;
+esac
 popd
 
 

@@ -46,7 +46,7 @@ Urts_Library_Name := sgx_urts
 
 App_Cpp_Files := App/App.cpp
 ifeq ($(QVL_ONLY), 1)
-App_Include_Paths := -IApp
+App_Include_Paths := -IApp -I../../QuoteGeneration/qpl/inc
 else
 App_Include_Paths := -IApp -I$(SGX_SDK)/include -I../../QuoteVerification/dcap_quoteverify/inc -I../../QuoteGeneration/qpl/inc
 endif
@@ -71,9 +71,17 @@ endif
 
 App_Cpp_Flags := $(App_C_Flags)
 ifeq ($(QVL_ONLY), 1)
+ifeq ($(DCAP_LINUX_BUILD_DIR),)
 App_Link_Flags := -L$(SGX_LIBRARY_PATH) -lsgx_dcap_quoteverify -lpthread -ldl
 else
+App_Link_Flags := -L$(DCAP_LINUX_BUILD_DIR) -lsgx_dcap_quoteverify -lpthread -ldl
+endif
+else
+ifeq ($(DCAP_LINUX_BUILD_DIR),)
 App_Link_Flags := -L$(SGX_LIBRARY_PATH) -lsgx_dcap_quoteverify -l$(Urts_Library_Name) -lpthread -ldl
+else
+App_Link_Flags := -L$(DCAP_LINUX_BUILD_DIR) -lsgx_dcap_quoteverify -l$(Urts_Library_Name) -lpthread -ldl
+endif
 endif
 
 # Check if SGX_QPL_LOGGING is either 0 or 1 or 2
@@ -85,8 +93,13 @@ ifeq ($(filter $(SGX_QPL_LOGGING),0 1 2),)
 endif
 
 ifneq ($(SGX_QPL_LOGGING), 0)
+ifeq ($(DCAP_LINUX_BUILD_DIR),)
 App_Link_Flags += -ldcap_quoteprov
+else
+App_Link_Flags += -L$(DCAP_LINUX_BUILD_DIR) -ldcap_quoteprov
 endif
+endif
+
 App_Cpp_Flags += -DSGX_QPL_LOGGING=$(SGX_QPL_LOGGING)
 
 App_Cpp_Objects := $(App_Cpp_Files:.cpp=.o)
@@ -157,12 +170,8 @@ ifeq ($(QVL_ONLY), 1)
 target: $(App_Name)
 else
 ifeq ($(Build_Mode), HW_RELEASE)
-target:  $(App_Name) $(Enclave_Name)
+target:  $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name)
 	@echo "The project has been built in release hardware mode."
-	@echo "Please sign the $(Enclave_Name) first with your signing key before you run the $(App_Name) to launch and access the enclave."
-	@echo "To sign the enclave use the command:"
-	@echo "   $(SGX_ENCLAVE_SIGNER) sign -key <your key> -enclave $(Enclave_Name) -out <$(Signed_Enclave_Name)> -config $(Enclave_Config_File)"
-	@echo "You can also sign the enclave using an external signing tool."
 
 
 else

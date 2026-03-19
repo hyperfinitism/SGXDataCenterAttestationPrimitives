@@ -54,7 +54,7 @@ SGX_COMMON_CFLAGS := $(SGX_COMMON_FLAGS) -Wjump-misses-init -Wstrict-prototypes 
 SGX_COMMON_CXXFLAGS := $(SGX_COMMON_FLAGS) -Wnon-virtual-dtor -std=c++11
 
 App_Cpp_Files := App.cpp
-App_Include_Paths := -IApp -I../../../external/jwt-cpp/include
+App_Include_Paths := -I../../../external/jwt-cpp/include
 
 App_C_Flags := -fPIC -Wno-attributes $(App_Include_Paths)
 

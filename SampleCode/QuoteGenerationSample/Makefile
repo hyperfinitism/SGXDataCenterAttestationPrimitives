@@ -69,9 +69,14 @@ else
         App_C_Flags += -DNDEBUG -UEDEBUG -UDEBUG
 endif
 
+ifeq ($(DCAP_LINUX_BUILD_DIR),)
+	LDFLAGS=-L/usr/lib/x86_64-linux-gnu/
+else
+	LDFLAGS=-L$(DCAP_LINUX_BUILD_DIR)
+endif
 
 App_Cpp_Flags := $(App_C_Flags) -std=c++11
-App_Link_Flags := $(SGX_COMMON_CFLAGS) -l$(DCAP_Library_Name) -l$(Urts_Library_Name) -ldl -lpthread
+App_Link_Flags := $(SGX_COMMON_CFLAGS) $(LDFLAGS) -l$(DCAP_Library_Name) -lsgx_default_qcnl_wrapper -l$(Urts_Library_Name) -ldl -lpthread
 
 ifeq ($(DEBUG),1)
         App_Link_Flags += -fsanitize=undefined
@@ -87,7 +92,11 @@ ifeq ($(filter $(SGX_QPL_LOGGING),0 1 2),)
 endif
 
 ifneq ($(SGX_QPL_LOGGING), 0)
-App_Link_Flags += -ldcap_quoteprov
+ifeq ($(DCAP_BUILD_LIB_DIR),)
+App_Link_Flags += -L$(SGX_LIBRARY_PATH) -ldcap_quoteprov
+else
+App_Link_Flags += -L$(DCAP_LINUX_BUILD_DIR) -ldcap_quoteprov
+endif
 endif
 App_Cpp_Flags += -DSGX_QPL_LOGGING=$(SGX_QPL_LOGGING)
 

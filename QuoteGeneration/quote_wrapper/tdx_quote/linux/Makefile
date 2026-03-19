@@ -85,13 +85,13 @@ $(Quote_Name): $(Quote_C_Objects) $(Quote_Cpp_Objects) $(PCE_Library)
 	@echo "LINK =>  $@"
 
 $(PCE_Library): force_look
-	@make -C $(PCE_Library_Dir)
+	+@$(MAKE) -C $(PCE_Library_Dir)
 
 $(TDQE_Signed_Name): force_look
-	@make -C $(TDQE_Dir)
+	+@$(MAKE) -C $(TDQE_Dir)
 
 $(ID_ENCLAVE_Signed_Name): force_look
-	@make -C $(ID_ENCLAVE_Dir)
+	+@$(MAKE) -C $(ID_ENCLAVE_Dir)
 
 force_look:
 	true
@@ -102,7 +102,7 @@ clean:
 	@$(RM) .config_* $(Quote_Name) $(Quote_C_Objects) $(Quote_Cpp_Objects) \
 	    $(Quote_C_Depends) $(Quote_Cpp_Depends) tdqe_u.* id_enclave_u.*    \
 	    $(addprefix $(BUILD_DIR)/,$(Quote_Name) $(Quote_Full) $(Quote_Major))
-	@make -C $(PCE_Library_Dir) clean
-	@make -C $(TDQE_Dir) clean
-	@make -C $(ID_ENCLAVE_Dir) clean
+	+@$(MAKE) -C $(PCE_Library_Dir) clean
+	+@$(MAKE) -C $(TDQE_Dir) clean
+	+@$(MAKE) -C $(ID_ENCLAVE_Dir) clean
 

@@ -52,18 +52,18 @@ $(CPP_Objects): %.o: %.cpp
 	@echo "CXX  <=  $<"
 
 submodule:
-	$(MAKE) -C $(QG_ATTEST_DIR)/linux -f Makefile.servtd_attest
-	$(MAKE) -C $(QG_VERIFICATION_DIR)/linux
-	$(MAKE) -C $(QV_QVE_DIR) SERVTD_ATTEST=1 install_objs
+	+$(MAKE) -C $(QG_ATTEST_DIR)/linux -f Makefile.servtd_attest
+	+$(MAKE) -C $(QG_VERIFICATION_DIR)/linux
+	+$(MAKE) -C $(QV_QVE_DIR) SERVTD_ATTEST=1 install_objs
 
 $(RDRAND_MAKEFILE):
 	@cd $(RDRAND_LIB_DIR) && ./configure CFLAGS=-fPIC && cd -
 
 RDRAND: $(RDRAND_MAKEFILE)
-	$(MAKE) -C $(RDRAND_LIB_DIR)
+	+$(MAKE) -C $(RDRAND_LIB_DIR)
 
 QGS_MSG_LIB:
-	$(MAKE) -C ../../qgs_msg_lib/linux
+	+$(MAKE) -C ../../qgs_msg_lib/linux
 
 $(ServTd_Attest_Static_Lib_Name): $(CPP_Objects) submodule RDRAND QGS_MSG_LIB
 	@$(MKDIR) $(SERVTD_ATTEST_BUILD_DIR)/.libqgs_msg/ $(SERVTD_ATTEST_BUILD_DIR)/.librdrand/ $(SERVTD_ATTEST_BUILD_DIR)/.tsgxssl $(SERVTD_ATTEST_BUILD_DIR)/.tsgxssl_crypto
@@ -93,10 +93,10 @@ $(ServTd_Attest_Static_Lib_Name): $(CPP_Objects) submodule RDRAND QGS_MSG_LIB
 
 .PHONY: clean
 clean:
-	$(MAKE) -C $(QG_ATTEST_DIR)/linux -f Makefile.servtd_attest clean
-	$(MAKE) -C $(QG_VERIFICATION_DIR)/linux clean
-	$(MAKE) -C $(QV_QVE_DIR) SERVTD_ATTEST=1 clean
-	if [ -e "$(RDRAND_LIB_DIR)/Makefile" ]; then $(MAKE) -C $(RDRAND_LIB_DIR) clean; fi
+	+$(MAKE) -C $(QG_ATTEST_DIR)/linux -f Makefile.servtd_attest clean
+	+$(MAKE) -C $(QG_VERIFICATION_DIR)/linux clean
+	+$(MAKE) -C $(QV_QVE_DIR) SERVTD_ATTEST=1 clean
+	if [ -e "$(RDRAND_LIB_DIR)/Makefile" ]; then +$(MAKE) -C $(RDRAND_LIB_DIR) clean; fi
 	@rm -rf $(CPP_Objects)
 	@rm -rf $(ServTd_Attest_Static_Lib_Name)
 	@rm -rf $(SERVTD_ATTEST_BUILD_DIR)

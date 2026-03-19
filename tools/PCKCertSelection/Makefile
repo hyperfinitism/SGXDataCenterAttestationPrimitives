@@ -63,10 +63,10 @@ all: $(PROJECTS) $(ZIPFILE)
 	$(PCKCERTSEL_VERBOSE)echo projects all: done
 
 debug:
-	$(PCKCERTSEL_VERBOSE)$(MAKE) DEBUG=1 all
+	+$(PCKCERTSEL_VERBOSE)$(MAKE) DEBUG=1 all
 
 release:
-	$(PCKCERTSEL_VERBOSE)$(MAKE) all
+	+$(PCKCERTSEL_VERBOSE)$(MAKE) all
 
 clean: $(PROJECTS)
 	$(PCKCERTSEL_VERBOSE)rm -rf out/*.zip
@@ -75,7 +75,7 @@ clean: $(PROJECTS)
 PCKSelectionSample : PCKCertSelectionLib
 
 $(PROJECTS): $(BIN_DIR)
-	$(PCKCERTSEL_VERBOSE)$(MAKE) -C $@ $(MAKECMDGOALS)
+	+$(PCKCERTSEL_VERBOSE)$(MAKE) -C $@ $(MAKECMDGOALS)
 	$(PCKCERTSEL_VERBOSE)echo "$@ : done"
 	$(PCKCERTSEL_VERBOSE)echo
 
