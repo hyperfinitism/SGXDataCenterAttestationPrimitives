@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2026 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -38,15 +38,64 @@ if test $(id -u) -ne 0; then
     exit 1
 fi
 
+version_ge() {
+    [ "$(printf '%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]
+}
+
+configure_qgs_transport() {
+    local kernel
+    local kernel_version
+    local libvirtd_version=""
+    local qemu_version=""
+
+    if [ -x "$(command -v libvirtd)" ]; then
+        libvirtd_version="$(libvirtd --version 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+){2}' | head -n1 || true)"
+    fi
+
+    if [ -x "$(command -v qemu-system-x86_64)" ]; then
+        qemu_version="$(qemu-system-x86_64 --version 2>/dev/null | head -n1 | grep -oE '[0-9]+(\.[0-9]+){2}' | head -n1 || true)"
+    fi
+
+    kernel="$(uname -r)"
+    kernel_version="${kernel%%-*}"
+
+    echo "kernel: ${kernel_version}"
+    echo "libvirt: ${libvirtd_version}"
+    echo "qemu: ${qemu_version}"
+
+    if { [ -n "${libvirtd_version}" ] && version_ge "${libvirtd_version}" "11.6"; } || \
+       { [ -n "${qemu_version}" ] && version_ge "${qemu_version}" "10.1.0"; } || \
+       version_ge "${kernel_version}" "6.17"; then
+        echo "unix socket based configuration for QGS"
+        if [ -f /etc/qgs.conf ]; then
+            sed -i -E 's/^([[:space:]]*port[[:space:]]*=.*)/#\1/' /etc/qgs.conf
+        fi
+    else
+        echo "vsock based configuration for QGS"
+        if [ -f /etc/qgs.conf ]; then
+            sed -i -E 's/^([[:space:]]*)#([[:space:]]*port[[:space:]]*=.*)$/\1\2/' /etc/qgs.conf
+        fi
+    fi
+}
 
 # Create user and group if not exist
 id -u qgsd &> /dev/null || \
     /usr/sbin/useradd -r -U -c "User for qgsd" \
     -d /var/opt/qgsd -s /sbin/nologin qgsd
 
+# Configure QGS transport (vsock or socket) based on the environment
+configure_qgs_transport
 
-# Start the AESMD service
+# Start the QGS service
+mkdir -p /etc/systemd/system/qgsd.service.d
+tee /etc/systemd/system/qgsd.service.d/socket.conf > /dev/null << 'EOF'
+[Service]
+RuntimeDirectory=tdx-qgs
+UMask=0111
+EOF
+
 if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
     systemctl enable qgsd
     systemctl start qgsd 
 elif [ -d /etc/init/ ]; then
