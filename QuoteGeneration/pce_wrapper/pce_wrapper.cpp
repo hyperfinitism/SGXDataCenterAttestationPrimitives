@@ -21,7 +21,7 @@
 #include "sgx_urts.h"
 #include "metadata.h"
 #include "aeerror.h"
-#include "sgx_pce.h"
+#include <sgx_pce.h>
 
 #include "pce_u.h"
 

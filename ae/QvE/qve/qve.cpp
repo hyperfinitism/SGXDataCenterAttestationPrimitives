@@ -24,8 +24,8 @@
 #endif //SGX_TRUSTED
 #else //SERVTD_ATTEST
 #include "sgx_dcap_qv_internal.h"
-#include "sgx_quote_4.h"
-#include "sgx_quote_5.h"
+#include <sgx_quote_4.h>
+#include <sgx_quote_5.h>
 #define memset_s(a,b,c,d) memset(a,c,d)
 #define memcpy_s(a,b,c,d) (memcpy(a,c,b) && 0)
 #endif //SERVTD_ATTEST
@@ -55,7 +55,7 @@
 #include "CertVerification/X509Constants.h"
 #include "Utils/TimeUtils.h"
 #include "SgxEcdsaAttestation/AttestationParsers.h"
-#include "sgx_qve_header.h"
+#include <sgx_qve_header.h>
 #include "sgx_qve_def.h"
 #include "qve_logic.h"
 
@@ -1781,8 +1781,8 @@ uint8_t do_verify_quote_integrity(
 #include <time.h>
 
 #include "QuoteVerification/Quote.h"
-#include "sgx_quote_4.h"
-#include "sgx_quote_5.h"
+#include <sgx_quote_4.h>
+#include <sgx_quote_5.h>
 #include "OpensslHelpers/Bytes.h"
 #include "sgx_base64.h"
 #include "ec_key.h"

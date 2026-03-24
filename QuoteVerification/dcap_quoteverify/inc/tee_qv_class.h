@@ -7,7 +7,7 @@
 #ifndef _TEE_CLASS_H_
 #define _TEE_CLASS_H_
 
-#include "sgx_qve_header.h"
+#include <sgx_qve_header.h>
 #include "sgx_qve_def.h"
 #include "sgx_urts.h"
 

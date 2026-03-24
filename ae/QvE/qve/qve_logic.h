@@ -14,8 +14,8 @@
 #include "SgxEcdsaAttestation/QuoteVerification.h"
 #include "SgxEcdsaAttestation/AttestationParsers.h"
 #include "QuoteVerification/Quote.h"
-#include "sgx_qve_header.h"
-#include "sgx_ql_lib_common.h"
+#include <sgx_qve_header.h>
+#include <sgx_ql_lib_common.h>
 
 #define NUMBER_OF_DATES_TO_COMPARE 8
 

@@ -50,7 +50,6 @@ INCLUDE := -I$(SGX_SDK)/include							\
 		   -I$(TOP_DIR)/../ae/dep/inc/internal			\
            -I$(TOP_DIR)/quote_wrapper/quote/inc			\
            -I$(TOP_DIR)/quote_wrapper/common/inc		\
-           -I$(TOP_DIR)/pce_wrapper/inc					\
            -I..											\
            -I.
 

@@ -60,9 +60,9 @@
 #include "sgx_urts.h"
 #include "sgx_report.h"
 #include "sgx_dcap_ql_wrapper.h"
-#include "sgx_pce.h"
+#include <sgx_pce.h>
 #include "sgx_error.h"
-#include "sgx_quote_3.h"
+#include <sgx_quote_3.h>
 #if SGX_QPL_LOGGING
 #include "sgx_default_quote_provider.h"
 #ifdef _MSC_VER

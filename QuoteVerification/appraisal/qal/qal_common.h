@@ -38,7 +38,7 @@
 
 #ifndef  BUILD_QAE
 #include "se_trace.h"
-#include "sgx_ql_lib_common.h"
+#include <sgx_ql_lib_common.h>
 #include "sgx_report.h"
 
 /**

@@ -18,7 +18,6 @@ CNL_Lib_C_Files := $(wildcard *.c ../*.c) ../../common/src/se_thread.c
 CNL_Lib_Include_Paths := -I../../quote_wrapper/common/inc       \
                          -I../inc -I$(SGX_SDK)/include          \
                          -I../../common/inc/internal            \
-                         -I../../pce_wrapper/inc                \
                          -I../../../QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson	\
                          -I../../../tools/PCKCertSelection/include \
                          -I$(PREBUILD_OPENSSL_PATH)/inc

@@ -6,7 +6,7 @@
 
 include ../../buildenv.mk
 
-INCLUDE += -I. -I../inc
+INCLUDE += -I.
 INCLUDE += -I$(SGX_SDK)/include         \
            -I$(COMMON_DIR)/inc/internal \
            -I$(COMMON_DIR)/inc/internal/linux

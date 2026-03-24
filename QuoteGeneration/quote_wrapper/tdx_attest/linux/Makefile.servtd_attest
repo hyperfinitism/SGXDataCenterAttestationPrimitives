@@ -40,7 +40,6 @@ INCLUDE :=	-I. \
 			-I$(SERVTD_ATTEST_STD_INC_PATH) \
 			-I$(SERVTD_ATTEST_STD_INC_PATH)/tlibc \
 			-I$(TOP_DIR)/quote_wrapper/servtd_attest/inc \
-			-I$(TOP_DIR)/pce_wrapper/inc \
 			-I../../qgs_msg_lib/inc \
 			-I../../common/inc \
 			-I$(QV_QVE_INC_DIR)

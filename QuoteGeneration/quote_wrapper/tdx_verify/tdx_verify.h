@@ -37,7 +37,7 @@
 #ifndef _TDX_VERIFY_H_
 #define _TDX_VERIFY_H_
 #include <stdint.h>
-#include "sgx_ql_lib_common.h"
+#include <sgx_ql_lib_common.h>
 
 typedef enum _tdx_verify_error_t
 {

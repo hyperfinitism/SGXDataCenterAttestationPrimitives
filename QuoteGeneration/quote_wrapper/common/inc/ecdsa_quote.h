@@ -40,8 +40,8 @@
 #define _ECDSA_QUOTE_H_
 
 #include "sgx_tseal.h"
-#include "sgx_pce.h"
-#include "sgx_quote_3.h"
+#include <sgx_pce.h>
+#include <sgx_quote_3.h>
 
 #define REF_ECDSDA_AUTHENTICATION_DATA_SIZE 32
 

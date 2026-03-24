@@ -24,7 +24,6 @@ QVL_VERIFY_INC	:= -I$(QVE_SRC_PATH)/Include \
                    -I$(SGX_SDK)/include \
                    -I$(DCAP_QG_DIR)/common/inc/internal \
                    -I$(DCAP_QG_DIR)/common/inc/internal/linux \
-                   -I$(DCAP_QG_DIR)/pce_wrapper/inc \
                    -I$(PREBUILD_OPENSSL_PATH)/inc \
                    $(QVL_LIB_INC) \
                    -I$(DCAP_QPL_DIR)/inc \

@@ -1,7 +1,7 @@
 #ifndef _TDX_QVE_VERIFY_H_
 #define _TDX_QVE_VERIFY_H_
 
-#include "sgx_ql_quote.h"
+#include <sgx_ql_quote.h>
 
 #if defined(__cplusplus)
 extern "C"  {

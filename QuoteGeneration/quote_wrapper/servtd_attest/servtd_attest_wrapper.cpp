@@ -6,7 +6,7 @@
 
 #include "../../../ae/QvE/Include/tdx_qve_verify.h"
 #include <stddef.h>
-#include "../common/inc/sgx_quote_4.h"
+#include <sgx_quote_4.h>
 #include "../tdx_attest/tdx_attest.h"
 #include "inc/servtd_attest.h"
 

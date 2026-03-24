@@ -18,7 +18,7 @@
 #include "qe_logic.h"
 #include "user_types.h"
 #include "qe3.h"
-#include "sgx_pce.h"
+#include <sgx_pce.h>
 #ifdef MSFT_COM_WRAPPER
     #include "sgx_provision_certificate.h"
 #endif

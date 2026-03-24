@@ -49,7 +49,6 @@ Enclave_Include_Paths := -I./ -I$(WARM_Top_Path)/core/iwasm/include \
                          -I$(JWT_CPP_Path)/include \
                          -I$(SGXSSL_PACKAGE_PATH)/include/ \
                          -I$(RAPIDJSON_DIR)/  \
-                         -I$(DCAP_QV_DIR)/dcap_tvl \
                          -I$(DCAP_QV_DIR)/appraisal/qal \
                          -I$(DCAP_QV_DIR)/appraisal/common \
                          -I$(DCAP_QG_DIR)/common/inc/internal

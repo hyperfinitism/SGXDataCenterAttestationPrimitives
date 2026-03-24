@@ -32,7 +32,7 @@
 #ifndef _SGX_QVE_DEF_H_
 #define _SGX_QVE_DEF_H_
 
-#include "sgx_ql_quote.h"
+#include <sgx_ql_quote.h>
 #include "sgx_report.h"
 #include "sgx_quote.h"
 

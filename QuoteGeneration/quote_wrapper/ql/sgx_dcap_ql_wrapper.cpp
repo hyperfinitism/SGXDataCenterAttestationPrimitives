@@ -43,7 +43,7 @@
 #include "sgx_report.h"
 #include "sgx_dcap_ql_wrapper.h"
 #include "sgx_ql_core_wrapper.h"
-#include "sgx_quote_3.h"
+#include <sgx_quote_3.h>
 #include "se_trace.h"
 
 
@@ -51,7 +51,7 @@ static bool g_out_of_proc = false;
 
 #ifndef _MSC_VER
 #include "sgx_uae_quote_ex.h"
-#include "sgx_pce.h"
+#include <sgx_pce.h>
 #include <stdlib.h>
 #define SGX_AESM_ADDR "SGX_AESM_ADDR"
 

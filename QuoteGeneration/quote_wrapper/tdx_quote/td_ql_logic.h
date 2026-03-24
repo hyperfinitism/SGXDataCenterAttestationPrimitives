@@ -37,9 +37,9 @@
 #ifndef _TD_QL_LOGIC_H_
 #define _TD_QL_LOGIC_H_
 #include "se_thread.h"
-#include "sgx_ql_lib_common.h"
+#include <sgx_ql_lib_common.h>
 #include "sgx_quote.h"
-#include "sgx_quote_5.h"
+#include <sgx_quote_5.h>
 #include "td_ql_wrapper.h"
 #include "quoting_enclave_tdqe.h"
 

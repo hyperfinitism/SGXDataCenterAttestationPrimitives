@@ -29,7 +29,6 @@ Servtd_Attest_Include := -I$(SERVTD_ATTEST_STD_INC_PATH) \
 						-I$(SERVTD_ATTEST_STD_INC_PATH)/../../sdk/tlibcxx/include \
 						-I$(SERVTD_ATTEST_STD_INC_PATH)/internal \
 						-I$(RDRAND_DIR) \
-						-I$(DCAP_QG_DIR)/pce_wrapper/inc \
 						-I$(DCAP_QG_DIR)/quote_wrapper/common/inc \
 						-I$(QV_QVE_INC_DIR)
 

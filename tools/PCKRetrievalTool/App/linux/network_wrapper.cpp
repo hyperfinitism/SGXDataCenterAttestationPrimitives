@@ -15,7 +15,7 @@
 #include <curl/curl.h>
 #include <fstream>
 #include <algorithm>
-#include "sgx_ql_lib_common.h"
+#include <sgx_ql_lib_common.h>
 #include "network_wrapper.h"
 #include "utility.h"
 

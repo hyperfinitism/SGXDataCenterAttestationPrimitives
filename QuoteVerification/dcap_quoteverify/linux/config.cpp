@@ -40,7 +40,7 @@
 #include "sgx_urts_wrapper.h"
 #include "se_trace.h"
 #include "se_thread.h"
-#include "sgx_pce.h"
+#include <sgx_pce.h>
 #include "sgx_dcap_qv_internal.h"
 
 #define MAX(x, y) (((x)>(y))?(x):(y))

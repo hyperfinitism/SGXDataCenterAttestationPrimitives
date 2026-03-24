@@ -41,7 +41,7 @@
 #else
 #include <cstring>
 #endif
-#include "sgx_ql_quote.h"
+#include <sgx_ql_quote.h>
 #include "sgx_dcap_quoteverify.h"
 
 

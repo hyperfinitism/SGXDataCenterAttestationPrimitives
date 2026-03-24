@@ -38,7 +38,7 @@
 #include "qcnl_config.h"
 #include "qcnl_util.h"
 #include "se_memcpy.h"
-#include "sgx_ql_lib_common.h"
+#include <sgx_ql_lib_common.h>
 #include <regex>
 
 #ifdef _MSC_VER

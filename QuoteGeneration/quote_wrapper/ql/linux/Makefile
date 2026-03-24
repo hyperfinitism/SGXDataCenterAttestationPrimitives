@@ -21,7 +21,7 @@ QL_Lib_Cpp_Files := $(wildcard ../*.cpp)
 QL_Lib_C_Files := se_trace.c se_thread.c
 
 QL_Lib_Include_Paths := -I../../common/inc -I./ -I$(SGX_SDK)/include -I../../../common/inc/internal
-QL_Lib_Include_Paths += -I../../quote/inc -I../../../pce_wrapper/inc -I../inc
+QL_Lib_Include_Paths += -I../../quote/inc -I../inc
 
 QL_Lib_C_Flags := $(COMMON_FLAGS) -g -fPIC -Werror -Wno-attributes $(QL_Lib_Include_Paths)
 
