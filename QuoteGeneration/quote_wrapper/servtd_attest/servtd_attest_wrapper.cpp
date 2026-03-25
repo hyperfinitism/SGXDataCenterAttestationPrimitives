@@ -64,12 +64,25 @@ servtd_attest_error_t verify_quote_integrity(
         (const uint8_t*)p_quote, quote_size, (const uint8_t*)root_pub_key,
         root_pub_key_size, (uint8_t*)p_tdx_servtd_suppl_data,
         (uint32_t*)p_tdx_servtd_suppl_data_size);
-    return verify_status;
+    return static_cast<servtd_attest_error_t>(verify_status);
 }
 
+/**
+ * NOTE on const-correctness:
+ * The parameter p_td_heap_base is declared as `const void*`, even though the memory it points to
+ * will ultimately be mutated by the heap allocator (sbrk). The const is cast away below when
+ * assigning to the global `void* heap_base` (defined in SGX SDK's sbrk.c under SERVTD_ATTEST).
+ * The SGX SDK's own heap_init() in trts_util.h and get_heap_base() both use non-const void*
+ * consistently, so this const is somewhat at odds with the SDK convention.
+ *
+ * The const qualifier is retained on the public API mainly because MigTD consumes it via Rust FFI
+ * (binding.rs: *const c_void). Removing const would require updating the FFI declaration to
+ * *mut c_void — a source-compatible change on the Rust side (Rust auto-coerces *mut to *const),
+ * but a coordinated change nonetheless.
+ */
 servtd_attest_error_t init_heap(const void* p_td_heap_base, const uint32_t td_heap_size)
 {
-    extern void* heap_base;
+    extern void* heap_base;  // See servtd_utils.c
     extern size_t heap_size;
 
     if (heap_base != NULL)
@@ -85,7 +98,7 @@ servtd_attest_error_t init_heap(const void* p_td_heap_base, const uint32_t td_he
     if (td_heap_size > SIZE_MAX - (size_t)p_td_heap_base)
         return SERVTD_ATTEST_ERROR_INVALID_PARAMETER;
 
-    heap_base = p_td_heap_base;
+    heap_base = (void*)p_td_heap_base; // const_cast: heap_base is void* in SGX SDK sbrk.c; heap will be mutated by sbrk() - see note above on const-correctness
     heap_size = td_heap_size;
 
     return SERVTD_ATTEST_SUCCESS;

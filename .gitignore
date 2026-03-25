@@ -34,3 +34,13 @@ compile_commands.json
 *.swp
 **/packages/
 .vs
+
+#downloaded external dependencies
+QuoteVerification/sgxssl
+
+#IDE files
+.vscode
+.idea
+
+#mergetool files
+*.orig

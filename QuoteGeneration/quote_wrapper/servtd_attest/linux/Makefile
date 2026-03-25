@@ -67,9 +67,9 @@ QGS_MSG_LIB:
 $(ServTd_Attest_Static_Lib_Name): $(CPP_Objects) submodule RDRAND QGS_MSG_LIB
 	@$(MKDIR) $(SERVTD_ATTEST_BUILD_DIR)/.libqgs_msg/ $(SERVTD_ATTEST_BUILD_DIR)/.librdrand/ $(SERVTD_ATTEST_BUILD_DIR)/.tsgxssl $(SERVTD_ATTEST_BUILD_DIR)/.tsgxssl_crypto
 	@$(RM) -f $(SERVTD_ATTEST_BUILD_DIR)/.libqgs_msg/* && cd $(SERVTD_ATTEST_BUILD_DIR)/.libqgs_msg && $(AR) x ../../../../quote_wrapper/qgs_msg_lib/linux/libqgs_msg.a && cd -
-	@$(RM) -f $(SERVTD_ATTEST_BUILD_DIR)/.librdrand/* && cd $(SERVTD_ATTEST_BUILD_DIR)/.librdrand && $(AR) x ../../../../quote_wrapper/servtd_attest/linux/$(RDRAND_LIB_DIR)/librdrand.a && cd -
-	@$(RM) -f $(SERVTD_ATTEST_BUILD_DIR)/.tsgxssl/* && cd $(SERVTD_ATTEST_BUILD_DIR)/.tsgxssl && $(AR) x ../../../../quote_wrapper/servtd_attest/linux/$(SGXSSL_PACKAGE_PATH)/lib64/lib$(SGXSSL_TLIB).a && cd -
-	@$(RM) -f $(SERVTD_ATTEST_BUILD_DIR)/.tsgxssl_crypto/* && cd $(SERVTD_ATTEST_BUILD_DIR)/.tsgxssl_crypto && $(AR) x ../../../../quote_wrapper/servtd_attest/linux/$(SGXSSL_PACKAGE_PATH)/lib64/lib$(SGXSSL_TCRYPTO).a && cd -
+	@$(RM) -f $(SERVTD_ATTEST_BUILD_DIR)/.librdrand/* && cd $(SERVTD_ATTEST_BUILD_DIR)/.librdrand && $(AR) x $(RDRAND_LIB_DIR)/librdrand.a && cd -
+	@$(RM) -f $(SERVTD_ATTEST_BUILD_DIR)/.tsgxssl/* && cd $(SERVTD_ATTEST_BUILD_DIR)/.tsgxssl && $(AR) x $(SGXSSL_PACKAGE_PATH)/lib64/lib$(SGXSSL_TLIB).a && cd -
+	@$(RM) -f $(SERVTD_ATTEST_BUILD_DIR)/.tsgxssl_crypto/* && cd $(SERVTD_ATTEST_BUILD_DIR)/.tsgxssl_crypto && $(AR) x $(SGXSSL_PACKAGE_PATH)/lib64/lib$(SGXSSL_TCRYPTO).a && cd -
 
 	@$(RM) -f $@
 	$(CP) $(SERVTD_ATTEST_STD_LIB_PATH)/libsgx_tstdc.a $@
@@ -95,7 +95,7 @@ clean:
 	+$(MAKE) -C $(QG_ATTEST_DIR)/linux -f Makefile.servtd_attest clean
 	+$(MAKE) -C $(QG_VERIFICATION_DIR)/linux clean
 	+$(MAKE) -C $(QV_QVE_DIR) SERVTD_ATTEST=1 clean
-	if [ -e "$(RDRAND_LIB_DIR)/Makefile" ]; then +$(MAKE) -C $(RDRAND_LIB_DIR) clean; fi
+	if [ -e "$(RDRAND_LIB_DIR)/Makefile" ]; then $(MAKE) -C $(RDRAND_LIB_DIR) clean; fi
 	@rm -rf $(CPP_Objects)
 	@rm -rf $(ServTd_Attest_Static_Lib_Name)
 	@rm -rf $(SERVTD_ATTEST_BUILD_DIR)
@@ -113,23 +113,23 @@ Servtd_Attest_LDFLAGS := $(SERVTD_ATTEST_LDFLAGS) \
 	-L$(RDRAND_LIB_DIR) \
 	-Wl,-z,relro,-z,now,-z,noexecstack -fPIC \
 	-Wl,--gc-sections \
+	-Wl,--whole-archive -l$(SGXSSL_TLIB) \
 	-Wl,--no-whole-archive \
 	-Wl,--start-group $(Servtd_Attest_External_Lib) -Wl,--end-group \
 	-Wl,-Map,servtd_attest.map \
 	-Wl,--defsym,__ImageBase=0  \
 	-Wl,--build-id		\
-	-Wl,--version-script=servtd_attest_wrapper.lds -Wl,-rpath=. \
-	-Wl,--whole-archive -l$(SGXSSL_TLIB)
+	-Wl,--version-script=servtd_attest_wrapper.lds -Wl,-rpath,'$$ORIGIN'
 
 $(ServTd_Attest_Lib_Name): $(CPP_Objects) submodule
 	$(CXX) $(CPP_Objects) $(SERVTD_ATTEST_BUILD_DIR)/*.o $(QVL_LIB_FILES:.cpp=.o) $(QVL_PARSER_FILES:.cpp=.o) $(Servtd_Attest_LDFLAGS) -shared -o $@
 
 test_app_static: $(ServTd_Attest_Static_Lib_Name)
-	$(CXX) -fpie -pie -I../inc -I../../common/inc -I../../../../../../common/inc -I$(QV_QVE_INC_DIR) ../test_servtd_attest.cpp -L. -Wl,-Bstatic -lservtd_attest -Wl,-Bdynamic \
+	$(CXX) -fpie -pie -I../inc -I../../common/inc -I$(SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH)/common/inc -I$(DCAP_QG_DIR)/pce_wrapper/inc -I$(QV_QVE_INC_DIR) ../test_servtd_attest.cpp -L. -Wl,-Bstatic -lservtd_attest -Wl,-Bdynamic \
 	-Wl,--defsym,__ImageBase=0 -Wl,--gc-sections -g -O0 -ggdb -o $@
 
 test_app: $(ServTd_Attest_Lib_Name)
-	$(CXX) -fpie -pie -I../inc -I../../common/inc -I../../../../../../common/inc -I$(QV_QVE_INC_DIR) ../test_servtd_attest.cpp -L. -lservtd_attest -Wl,-rpath=./ -g -O0 -ggdb -fpermissive -o $@
+	$(CXX) -fpie -pie -I../inc -I../../common/inc -I$(SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH)/common/inc -I$(DCAP_QG_DIR)/pce_wrapper/inc -I$(QV_QVE_INC_DIR) ../test_servtd_attest.cpp -L. -lservtd_attest -Wl,-rpath,'$$ORIGIN' -g -O0 -ggdb -fpermissive -o $@
 
 test_clean:
 	@rm -rf $(ServTd_Attest_Lib_Name) *.map

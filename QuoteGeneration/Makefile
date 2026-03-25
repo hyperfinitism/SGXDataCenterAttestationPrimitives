@@ -52,6 +52,10 @@ qve_wrapper:
 servtd_attest:
 	+$(MAKE) -C quote_wrapper/servtd_attest/linux SERVTD_ATTEST=1
 
+.PHONY: servtd_attest_test_app
+servtd_attest_test_app: servtd_attest
+	+$(MAKE) -C quote_wrapper/servtd_attest/linux SERVTD_ATTEST=1 test_app_static test_app 
+
 .PHONY: deb_sgx_dcap_ql_pkg
 deb_sgx_dcap_ql_pkg: $(CHECK_OPT) pce_logic qe3_logic
 	./installer/linux/deb/libsgx-dcap-ql/build.sh

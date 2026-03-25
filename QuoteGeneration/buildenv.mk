@@ -227,11 +227,25 @@ ENCLAVE_LDFLAGS  = $(COMMON_LDFLAGS) -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefi
                    -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
                    -Wl,--defsym,__ImageBase=0
 
-SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH := $(ROOT_DIR)/../../..
+# --- ServTD Attestation: SDK source resolution ---
+# Default: nested at <SDK_ROOT>/external/dcap_source.
+# Override: SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH=<path> for a separate SDK checkout.
+SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH ?= $(ROOT_DIR)/../../..
+# Validate that the resolved SDK root actually looks like an SDK checkout
+ifdef SERVTD_ATTEST
+ifeq ($(filter clean,$(MAKECMDGOALS)),)
+ifeq ($(and $(wildcard $(abspath $(SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH))/sdk),$(wildcard $(abspath $(SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH))/common/inc)),)
+    $(error servtd_attest: SGX SDK source not found at $(SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH) (=$(abspath $(SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH))). To build in SERVTD_ATTEST mode, please ensure this (DCAP) repo is nested within the SGX one at <SGX_source_path>/external/dcap_source (cloned as a submodule within the SGX SDK) or set SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH=<SGX_source_path>)
+endif
+endif
+endif
+# Now resolve to absolute for all downstream use
+override SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH := $(abspath $(SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH))
 SERVTD_ATTEST_STD_INC_PATH := $(SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH)/common/inc
 SERVTD_ATTEST_STD_LIB_PATH := $(SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH)/build/linux
+SERVTD_ATTEST_LIBCXX_INC_PATH := $(SERVTD_ATTEST_LINUX_TRUNK_ROOT_PATH)/sdk/tlibcxx/include
 SERVTD_ATTEST_CFLAGS := $(CFLAGS) -ffreestanding -nostdinc -fPIC -fvisibility=hidden -DSERVTD_ATTEST
-SERVTD_ATTEST_CXXFLAGS := $(SERVTD_ATTEST_CFLAGS) -nostdinc++
+SERVTD_ATTEST_CXXFLAGS := $(filter-out -Wjump-misses-init -Wstrict-prototypes -Wunsuffixed-float-constants,$(SERVTD_ATTEST_CFLAGS)) -nostdinc++
 SERVTD_ATTEST_LDFLAGS := -nostdlib -nodefaultlibs -nostartfiles  \
                         -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--export-dynamic -Wl,--gc-sections -g
 SERVTD_ATTEST_BUILD_DIR := $(BUILD_DIR)/servtd_attest

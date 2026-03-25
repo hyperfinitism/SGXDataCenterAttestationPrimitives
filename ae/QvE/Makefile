@@ -40,7 +40,7 @@ CRYPTO_LIB_NAME := sgx_tcrypto
 
 QVE_FILES := $(QVE_DIR)/qve.cpp $(QVE_DIR)/qve_logic.cpp
 ifdef SERVTD_ATTEST
-	QVE_FILES += $(QVE_DIR)/servtd_qve_logic.cpp
+	QVE_FILES += $(QVE_DIR)/servtd_qve_utils.cpp
 	QVE_C_FILES := $(DCAP_QG_DIR)/quote_wrapper/servtd_attest/servtd_utils.c
 
 QVE_OBJS := $(QVE_FILES:.cpp=.o) $(QVE_C_FILES:.c=.o)
@@ -63,8 +63,7 @@ QVE_VER:= $(shell awk '$$2 ~ /QVE_VERSION/ { print substr($$3, 2, length($$3) - 
 ENCLAVE_INC_PATH := $(COMMON_INCLUDE) -IInclude -I$(QVE_DIR) -I$(DCAP_QG_DIR)/quote_wrapper/common/inc -I$(DCAP_QPL_DIR)/inc -I$(DCAP_QV_DIR)/appraisal/common
 
 ifdef SERVTD_ATTEST
-	ENCLAVE_INC_PATH += -I$(DCAP_QV_DIR)/dcap_quoteverify/inc -I$(DCAP_QG_DIR)/quote_wrapper/tdx_verify -I$(DCAP_QG_DIR)/quote_wrapper/td_migration/inc -I../../prebuilt/openssl/inc \
-			    -I$(DCAP_QG_DIR)/quote_wrapper/servtd_attest/inc
+	ENCLAVE_INC_PATH += -I$(DCAP_QV_DIR)/dcap_quoteverify/inc -I$(DCAP_QG_DIR)/quote_wrapper/tdx_verify -I$(DCAP_QG_DIR)/quote_wrapper/servtd_attest/inc
 	ifeq ($(DEBUG), 1)
 		ENCLAVE_CFLAGS += -O0 -ggdb -g
 	endif

@@ -33,7 +33,7 @@
 #define _SERVTD_COMMON_H_
 
 #include <stdint.h>
-#include <sgx_quote_5.h>
+#include "wrapped_sgx_quote_5.h"
 #include "sgx_attributes.h"
 #include "sgx_qve_def.h"
 

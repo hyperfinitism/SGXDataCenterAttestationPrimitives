@@ -3,7 +3,14 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#ifdef SERVTD_ATTEST
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"  // FIXME(pre-existing): mbsnrtowcs()/wcsnrtombs() decls in CrlStore.h conflict with std headers under servtd_attest
+#endif
 #include "PckParser/CrlStore.h"
+#ifdef SERVTD_ATTEST
+#pragma GCC diagnostic pop
+#endif
 #include "qve_logic.h"
 
 namespace {
@@ -214,7 +221,7 @@ const json::TcbLevel& getMatchingTcbLevel(const json::TcbInfo *tcbInfo,
         }
     }
 
-    throw SGX_QL_TCBINFO_UNSUPPORTED_FORMAT;
+    throw SGX_QL_TCBINFO_UNSUPPORTED_FORMAT;  // FIXME(pre-existing): throws raw quote3_error_t, not a descendant of std::exception
 }
 
 time_t getEarlierDate(const time_t& date1, const time_t& date2)

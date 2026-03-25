@@ -43,7 +43,7 @@ extern "C"
 {
 #endif
 
-void abort(void);
+void __attribute__((noreturn)) abort(void);
 
 int* get_errno_addr(void);
 

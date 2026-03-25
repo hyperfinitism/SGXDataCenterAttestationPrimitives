@@ -188,6 +188,8 @@ __attribute__((visibility("default"))) servtd_attest_error_t verify_quote_integr
  * Must be called only once by ServTD before other attestation lib APIs
  *
  * @param p_td_heap_base [in] the heap base address allocated by ServTD, the address should be aligned(0x1000).
+ *          Note: Despite the const qualifier, the heap memory will be mutated by the internal allocator (sbrk).
+ *          The const is cast away internally; it is retained here for compatibility with MigTD's Rust FFI bindings.
  * @param td_heap_size [in] the capacity of the heap, should be multiples of 0x1000 (in bytes).
  * @return Status code of the operation, one of:
  *      - SERVTD_ATTEST_SUCCESS: Successfully init heap for internal use.

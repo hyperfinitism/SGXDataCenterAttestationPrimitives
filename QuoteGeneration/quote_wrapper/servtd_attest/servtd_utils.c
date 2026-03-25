@@ -31,7 +31,10 @@
 
 #include "servtd_utils.h"
 
-void abort(void) { __asm__("ud2"); }
+void __attribute__((noreturn)) abort(void) {
+    __asm__("ud2"); 
+    __builtin_unreachable();
+}
 
 int* get_errno_addr(void)
 {
