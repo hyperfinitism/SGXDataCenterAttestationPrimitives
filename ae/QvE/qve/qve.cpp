@@ -561,6 +561,18 @@ quote3_error_t get_fmspc_ca_from_quote(const uint8_t* p_quote, uint32_t quote_si
 
 #ifdef SERVTD_ATTEST
 
+constexpr const char* tcbStatusToString(TcbStatus status)
+{
+    switch (status) {
+        case TcbStatus::UpToDate:                     return "UpToDate";
+        case TcbStatus::ConfigurationNeeded:          return "ConfigurationNeeded";
+        case TcbStatus::OutOfDate:                    return "OutOfDate";
+        case TcbStatus::OutOfDateConfigurationNeeded: return "OutOfDateConfigurationNeeded";
+        case TcbStatus::Revoked:                      return "Revoked";
+        default:                                      return "Unknown";
+    }
+}
+
 /**
     * @brief Get the matching QE TCB level based on ISVSVN
     * @param enclaveIdentity The QE identity
@@ -654,7 +666,7 @@ static quote3_error_t servtd_set_quote_supplemental_data(
                  p_fmspc_size) != 0) {
         return SGX_QL_ERROR_UNEXPECTED;
     }
-    // get TCB date of TCB level in TCB Info
+    // get platform TCB date and TCB level in TCB Info
     //
     auto tcb = getMatchingTcbLevel(tcb_info_obj, pckCert, quote);
     auto tdx_svn = tcb.getTdxTcbComponents();
@@ -670,6 +682,36 @@ static quote3_error_t servtd_set_quote_supplemental_data(
             p_servtd_suppl_data->sgx_tcb_components[i] = sgx_svn[i].getSvn();
         }
     }
+
+    p_servtd_suppl_data->platform_tcb_date = tcb.getTcbDate();
+
+    auto st = tcb.getStatus();
+    size_t len = st.length();
+
+    if (len > TCB_STATUS_LEN - 1)
+        return SGX_QL_ERROR_UNEXPECTED;
+
+    std::copy_n(st.c_str(), len, p_servtd_suppl_data->tcb_status);
+    p_servtd_suppl_data->tcb_status[len] = '\0';
+
+    // Get QE TCB date and TCB status
+    p_servtd_suppl_data->qe_tcb_date = qe_tcb_info.getTcbDate();
+
+    auto qe_st = qe_tcb_info.getTcbStatus();
+    const char* qe_status_str = tcbStatusToString(qe_st);
+    size_t qe_status_len = strlen(qe_status_str);
+
+    if (qe_status_len > TCB_STATUS_LEN - 1) {
+        return SGX_QL_ERROR_UNEXPECTED;
+    }
+
+    std::copy_n(qe_status_str, qe_status_len, p_servtd_suppl_data->qe_tcb_status);
+
+    p_servtd_suppl_data->qe_tcb_status[qe_status_len] = '\0';
+
+    p_servtd_suppl_data->tcb_date = (p_servtd_suppl_data->platform_tcb_date < p_servtd_suppl_data->qe_tcb_date) ?
+                                    p_servtd_suppl_data->platform_tcb_date : p_servtd_suppl_data->qe_tcb_date;
+
     // Get Tdx Module major version
     p_servtd_suppl_data->tdx_module_major_ver = quote.getTeeTcbSvn()[1];
     uint8_t matchedTcbLevel = 0;
@@ -1286,22 +1328,20 @@ quote3_error_t sgx_qve_verify_quote(
     }
     unsigned char fmspc_from_quote[FMSPC_SIZE] = { 0 };
     unsigned char ca_from_quote[CA_SIZE] = { 0 };
+    bool collateral_flag = false;
+
+    if (SGX_QL_SUCCESS != get_fmspc_ca_from_quote(p_quote, quote_size, fmspc_from_quote, FMSPC_SIZE, ca_from_quote, CA_SIZE)) {
+        return SGX_QL_ERROR_INVALID_PARAMETER;
+    }
 
     if(p_quote_collateral == NULL) {
-
-        quote3_error_t retrieve_fmspc_ret;
-        retrieve_fmspc_ret = get_fmspc_ca_from_quote(p_quote, quote_size, fmspc_from_quote, FMSPC_SIZE, ca_from_quote, CA_SIZE);
-        if(retrieve_fmspc_ret != SGX_QL_SUCCESS)
-        {
-            return SGX_QL_ERROR_INVALID_PARAMETER;
-        }
-
         tdx_verify_error_t coll_ret = tdx_att_get_collateral((const uint8_t *) fmspc_from_quote, FMSPC_SIZE, (const char *)ca_from_quote, (tdx_ql_qve_collateral_t**)&p_quote_collateral);
         if(coll_ret != TDX_VERIFY_SUCCESS)
         {
             return SGX_QL_UNABLE_TO_GET_COLLATERAL;
         }
 
+        collateral_flag = true;
     }
 
 #endif
@@ -1317,6 +1357,13 @@ quote3_error_t sgx_qve_verify_quote(
         expiration_check_date <= 0 ||
         (p_qve_report_info != NULL && !sgx_is_within_enclave(p_qve_report_info, sizeof(*p_qve_report_info))) ||
         (p_supplemental_data == NULL && supplemental_data_size != 0)) {
+
+#ifdef SERVTD_ATTEST
+        if(p_quote_collateral != NULL && collateral_flag) {
+			tdx_att_free_collateral((tdx_ql_qve_collateral_t*)p_quote_collateral);
+			p_quote_collateral = NULL;
+	    }
+#endif
         //one or more invalid parameters
         //
         return SGX_QL_ERROR_INVALID_PARAMETER;
@@ -1329,10 +1376,10 @@ quote3_error_t sgx_qve_verify_quote(
          p_quote_collateral->version != QVE_COLLATERAL_VERSOIN31 &&
          p_quote_collateral->version != QVE_COLLATERAL_VERSION4) {
 #ifdef SERVTD_ATTEST
-		if(p_quote_collateral != NULL) {
+        if(p_quote_collateral != NULL && collateral_flag) {
 			tdx_att_free_collateral((tdx_ql_qve_collateral_t*)p_quote_collateral);
 			p_quote_collateral = NULL;
-		}
+	    }
 #endif
 
         return SGX_QL_COLLATERAL_VERSION_NOT_SUPPORTED;
@@ -1710,7 +1757,7 @@ quote3_error_t sgx_qve_verify_quote(
         }
     }
 #else
-	if(p_quote_collateral != NULL) {
+	if(p_quote_collateral != NULL && collateral_flag) {
 			tdx_att_free_collateral((tdx_ql_qve_collateral_t*)p_quote_collateral);
 			p_quote_collateral = NULL;
 	}
@@ -1740,6 +1787,7 @@ uint8_t do_verify_quote_integrity(
 		uint32_t quote_size,
 		const uint8_t * root_pub_key,
 		uint32_t root_pub_key_size,
+        const tdx_ql_qv_collateral_t *p_quote_collateral,
 		uint8_t *p_td_report_body,
 		uint32_t * p_td_report_body_size) {
 
@@ -1751,19 +1799,20 @@ uint8_t do_verify_quote_integrity(
 		return SGX_TD_VERIFY_ERROR(SGX_QL_ERROR_INVALID_PARAMETER);
 	}
 
-	quote3_error_t ret = sgx_qve_verify_quote(p_quote,
-			quote_size,
-			NULL,
-			1, //expiration_check_date, just set to 1 to pass sanity check
-			&collateral_expiration_status,
-			&quote_verification_result,
-			NULL, // qve report
-			0,    // supplemental data size
-			NULL, // supplemental data
+    quote3_error_t ret = sgx_qve_verify_quote(
+            p_quote,
+            quote_size,
+            p_quote_collateral,
+            1, //expiration_check_date, just set to 1 to pass sanity check
+            &collateral_expiration_status,
+            &quote_verification_result,
+            NULL, // qve report
+            0,    // supplemental data size
+            NULL, // supplemental data
             root_pub_key,
             root_pub_key_size,
-			p_td_report_body,
-			p_td_report_body_size);
+            p_td_report_body,
+            p_td_report_body_size);
 	return static_cast<uint8_t>(SGX_TD_VERIFY_ERROR(ret));
 }
 
