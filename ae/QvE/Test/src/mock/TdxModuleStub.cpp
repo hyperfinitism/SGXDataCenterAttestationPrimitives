@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2025 Intel Corporation
+ * Copyright(c) 2025-2026 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -17,4 +17,4 @@ namespace intel { namespace sgx { namespace dcap { namespace parser { namespace 
     const std::vector<uint8_t> &TdxModule::getMrSigner() const {
         return _mrsigner;
     }
-}}}}}
+}}}}} // namespace intel::sgx::dcap::parser::json

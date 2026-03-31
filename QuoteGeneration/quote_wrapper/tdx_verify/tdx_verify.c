@@ -38,6 +38,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#ifdef SERVTD_ATTEST
+#include <mbusafecrt.h>  //For strncpy_s 
+#endif
 
 tdx_verify_error_t tdx_att_get_collateral(
         const uint8_t *fmspc, uint16_t fmspc_size, const char *pck_ca,
@@ -55,19 +58,19 @@ tdx_verify_error_t tdx_att_get_collateral(
     uint16_t major_version = 0;
     uint16_t minor_version = 0;
     uint32_t tee_type = 0x81;
-    uint8_t *p_pck_crl_issuer_chain = NULL;
+    const uint8_t *p_pck_crl_issuer_chain = NULL;
     uint32_t pck_crl_issuer_chain_size;
-    uint8_t *p_root_ca_crl = NULL;
+    const uint8_t *p_root_ca_crl = NULL;
     uint32_t root_ca_crl_size = 0;
-    uint8_t *p_pck_crl = NULL;
+    const uint8_t *p_pck_crl = NULL;
     uint32_t pck_crl_size = 0;
-    uint8_t *p_tcb_info_issuer_chain = NULL;
+    const uint8_t *p_tcb_info_issuer_chain = NULL;
     uint32_t tcb_info_issuer_chain_size = 0;
-    uint8_t *p_tcb_info = NULL;
+    const uint8_t *p_tcb_info = NULL;
     uint32_t tcb_info_size = 0;
-    uint8_t *p_qe_identity_issuer_chain = NULL;
+    const uint8_t *p_qe_identity_issuer_chain = NULL;
     uint32_t qe_identity_issuer_chain_size = 0;
-    uint8_t *p_qe_identity = NULL;
+    const uint8_t *p_qe_identity = NULL;
     uint32_t qe_identity_size = 0;
 
     if (NULL == fmspc || 0 == fmspc_size || NULL == pck_ca || NULL == pp_verification_collateral) {
@@ -178,9 +181,17 @@ tdx_verify_error_t tdx_att_get_collateral(
         ret = TDX_VERIFY_ERROR_OUT_OF_MEMORY;
         goto ret_point;
     }
+
+    // FIXME(pre-existing): strncpy_s(dest, size, src, size) with destsz==count is technically
+    // a C11 Annex K constraint violation (count should be destsz-1). In practice this is safe:
+    // QCNL allocate_and_copy() NUL-terminates all buffers and sizes include the NUL (the
+    // combined buffers use embedded '\0' separators which survive QPL split_buffer()). So
+    // strncpy_s hits the NUL before reaching count==destsz. Ideally should use memcpy_s.
+    // The (const char *) cast on p_* is benign — data originates as char* PEM/JSON in QPL,
+    // round-trips through QGS message layer as uint8_t*.
     strncpy_s((*pp_verification_collateral)->pck_crl_issuer_chain,
             pck_crl_issuer_chain_size,
-            p_pck_crl_issuer_chain,
+            (const char *)p_pck_crl_issuer_chain,
             pck_crl_issuer_chain_size);
     (*pp_verification_collateral)->pck_crl_issuer_chain_size = pck_crl_issuer_chain_size;
 
@@ -193,7 +204,7 @@ tdx_verify_error_t tdx_att_get_collateral(
     }
     strncpy_s((*pp_verification_collateral)->root_ca_crl,
             root_ca_crl_size,
-            p_root_ca_crl,
+            (const char *)p_root_ca_crl,  // FIXME: <--Same strncpy_s caveat as above
             root_ca_crl_size);
     (*pp_verification_collateral)->root_ca_crl_size = root_ca_crl_size;
 
@@ -206,7 +217,7 @@ tdx_verify_error_t tdx_att_get_collateral(
     }
     strncpy_s((*pp_verification_collateral)->pck_crl,
             pck_crl_size,
-            p_pck_crl,
+            (const char *)p_pck_crl,  // FIXME: <--Same strncpy_s caveat as above
             pck_crl_size);
     (*pp_verification_collateral)->pck_crl_size = pck_crl_size;
 
@@ -219,7 +230,7 @@ tdx_verify_error_t tdx_att_get_collateral(
     }
     strncpy_s((*pp_verification_collateral)->tcb_info_issuer_chain,
             tcb_info_issuer_chain_size,
-            p_tcb_info_issuer_chain,
+            (const char *)p_tcb_info_issuer_chain,  // FIXME: <--Same strncpy_s caveat as above
             tcb_info_issuer_chain_size);
     (*pp_verification_collateral)->tcb_info_issuer_chain_size = tcb_info_issuer_chain_size;
     
@@ -232,7 +243,7 @@ tdx_verify_error_t tdx_att_get_collateral(
     }
     strncpy_s((*pp_verification_collateral)->tcb_info,
             tcb_info_size,
-            p_tcb_info,
+            (const char *)p_tcb_info,  // FIXME: <--Same strncpy_s caveat as above
             tcb_info_size);
     (*pp_verification_collateral)->tcb_info_size = tcb_info_size;
 
@@ -245,7 +256,7 @@ tdx_verify_error_t tdx_att_get_collateral(
     }
     strncpy_s((*pp_verification_collateral)->qe_identity_issuer_chain,
             qe_identity_issuer_chain_size,
-            p_qe_identity_issuer_chain,
+            (const char *)p_qe_identity_issuer_chain,  // FIXME: <--Same strncpy_s caveat as above
             qe_identity_issuer_chain_size);
     (*pp_verification_collateral)->qe_identity_issuer_chain_size = qe_identity_issuer_chain_size;
     
@@ -258,7 +269,7 @@ tdx_verify_error_t tdx_att_get_collateral(
     }
     strncpy_s((*pp_verification_collateral)->qe_identity,
             qe_identity_size,
-            p_qe_identity,
+            (const char *)p_qe_identity,
             qe_identity_size);
     (*pp_verification_collateral)->qe_identity_size = qe_identity_size;
 

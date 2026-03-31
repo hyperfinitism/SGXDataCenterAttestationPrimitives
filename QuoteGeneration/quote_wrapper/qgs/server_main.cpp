@@ -215,7 +215,7 @@ int main(int argc, const char* argv[])
     try {
         do {
             reload = false;
-            asio::io_service io_service;
+            asio::io_context io_context;
             gs::endpoint ep;
             if (!socket_based_communication) {
                 struct sockaddr_vm vm_addr = {};
@@ -235,9 +235,9 @@ int main(int argc, const char* argv[])
                 }
             }
             QGS_LOG_INFO("About to create QgsServer\n");
-            server = new QgsServer(io_service, ep, (uint8_t)num_threads);
+            server = new QgsServer(io_context, ep, (uint8_t)num_threads);
             QGS_LOG_INFO("About to start main loop\n");
-            io_service.run();
+            io_context.run();
             QGS_LOG_INFO("Quit main loop\n");
             QgsServer *temp_server = server;
             server = NULL;

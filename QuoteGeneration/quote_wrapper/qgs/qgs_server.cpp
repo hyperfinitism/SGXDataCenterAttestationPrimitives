@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2022 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2026 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -86,9 +86,9 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
     static Pointer create(boost::mutex &connection_mtx,
                           ConnectionSet &connections,
                           asio::thread_pool &pool,
-                          asio::io_service &io_service) {
+                          asio::io_context &io_context) {
         return Pointer(new QgsConnection(connection_mtx, connections, pool,
-                                         io_service));
+                                         io_context));
     }
 
     gs::socket &get_socket() {
@@ -96,7 +96,7 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
     }
 
     void start() {
-        m_timer.expires_from_now(timeout);
+        m_timer.expires_after(timeout);
         m_timer.async_wait([this](boost::system::error_code ec) {
             if (!ec) {
                 QGS_LOG_ERROR("timeout\n");
@@ -123,21 +123,21 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
     ConnectionSet &m_connections;
     asio::thread_pool &m_pool;
     gs::socket m_socket;
-    asio::deadline_timer m_timer;
+    boost::asio::steady_timer m_timer;
     data_buffer m_readbuf;
 
-    const boost::posix_time::time_duration timeout =
-        boost::posix_time::seconds(QGS_TIMEOUT);
+    const std::chrono::seconds timeout =
+        std::chrono::seconds(QGS_TIMEOUT);
 
     QgsConnection(boost::mutex &connection_mtx,
                   ConnectionSet &connections,
                   asio::thread_pool &pool,
-                  asio::io_service &io_service)
+                  asio::io_context &io_context)
         : m_connection_mtx(connection_mtx),
           m_connections(connections),
           m_pool(pool),
-          m_socket(io_service),
-          m_timer(io_service) {
+          m_socket(io_context),
+          m_timer(io_context) {
     }
 
     void handle_read(const boost::system::error_code &ec, std::size_t bytes_transferred) {
@@ -294,8 +294,8 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
         boost::mutex connection_mtx;
         boost::unordered_set<boost::shared_ptr<QgsConnection>> connections;
         boost::asio::thread_pool pool;
-        QgsServerImpl(asio::io_service &in_io_service, gs::endpoint &ep, uint8_t num_threads)
-            : pool(num_threads), acceptor(in_io_service, ep), io_service(in_io_service) {
+        QgsServerImpl(asio::io_context &in_io_context, gs::endpoint &ep, uint8_t num_threads)
+            : pool(num_threads), acceptor(in_io_context, ep), io_context(in_io_context) {
             start_accept();
         }
 
@@ -303,7 +303,7 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
         {
             QgsConnection::Pointer new_connection =
                 QgsConnection::create(connection_mtx, connections, pool,
-                                      io_service);
+                                      io_context);
 
             acceptor.async_accept(new_connection->get_socket(),
                                   boost::bind(&QgsServerImpl::handle_accept,
@@ -337,18 +337,18 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
             QGS_LOG_INFO("Stopped [%d] connections, about to clear connection list\n", i);
             pool.join();
             QGS_LOG_INFO("Joined thread pool\n");
-            io_service.stop();
-            QGS_LOG_INFO("Stopped io_service\n");
+            io_context.stop();
+            QGS_LOG_INFO("Stopped io_context\n");
             connections.clear();
         }
 
     private:
         vsock_acceptor acceptor;
-        asio::io_service& io_service;
+        asio::io_context& io_context;
     };
 
-    QgsServer::QgsServer(asio::io_service &io_service, gs::endpoint &ep, uint8_t num_threads)
-        : d(new QgsServerImpl(io_service, ep, num_threads)) {
+    QgsServer::QgsServer(asio::io_context &io_context, gs::endpoint &ep, uint8_t num_threads)
+        : d(new QgsServerImpl(io_context, ep, num_threads)) {
     }
 
     void QgsServer::shutdown() {

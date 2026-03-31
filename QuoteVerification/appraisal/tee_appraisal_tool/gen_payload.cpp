@@ -26,7 +26,7 @@
  */
 
 #include "gen_payload.h"
-#include "sgx_quote_5.h"
+#include <sgx_quote_5.h>
 #include "file_util.h"
 #include "format_util.h"
 #include "se_trace.h"

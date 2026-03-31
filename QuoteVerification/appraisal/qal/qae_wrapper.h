@@ -30,7 +30,7 @@
 
 #include "sgx_urts.h"
 #include "sgx_error.h"
-#include "sgx_ql_quote.h"
+#include <sgx_ql_quote.h>
 #include <time.h>
 
 #if defined(__cplusplus)

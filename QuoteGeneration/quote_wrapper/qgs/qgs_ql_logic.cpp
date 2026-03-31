@@ -34,7 +34,7 @@
 #include "qgs_log.h"
 #include "qgs_msg_lib.h"
 #include "se_trace.h"
-#include "sgx_ql_lib_common.h"
+#include <sgx_ql_lib_common.h>
 #include "td_ql_wrapper.h"
 #include <boost/thread.hpp>
 #include <boost/thread/detail/thread.hpp>

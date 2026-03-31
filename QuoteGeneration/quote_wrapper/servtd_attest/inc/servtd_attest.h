@@ -42,7 +42,7 @@
 
 #define TDX_REPORT_SIZE 1024
 #define HEAP_PAGE_SIZE 0x1000
-#define TDX_MIGR_SUPPL_DATA_SIZE 768
+#define TDX_MIGR_SUPPL_DATA_SIZE 1024 // bumped from 768 (was ~50B headroom over original 718B struct); current packed struct is 822B
 
 #if defined(__cplusplus)
 extern "C"
@@ -170,7 +170,7 @@ __attribute__((visibility("default"))) servtd_attest_error_t get_quote(
  * @param quote_size [in] length of p_quote(in bytes), should be the real size of ServTD td quote
  * @param root_pub_key [in] pointer to Intel Root Public Key
  * @param root_pub_key_size [in] length of Intel Root Public Key(in bytes)
- * @param p_tdx_servtd_suppl_data [in, out] pointer to the output buffer, buffer size should not less than the size of sgx_ql_qv_supplemental_t
+ * @param p_tdx_servtd_suppl_data [in, out] pointer to the output buffer, buffer size should not less than the size of servtd_tdx_quote_suppl_data
  * @param p_tdx_servtd_suppl_data_size [in, out], pointer to the size in bytes of the servtd_tdx_quote_suppl_data buffer. If successful, the actual size of the data is returned.
  *
  * @return Status code of the operation, one of:
@@ -184,10 +184,35 @@ __attribute__((visibility("default"))) servtd_attest_error_t verify_quote_integr
             uint32_t* p_tdx_servtd_suppl_data_size);
 
 /**
+ * This is an advanced version of verify_quote_integrity that adds quote verification collateral support and extends the servtd_tdx_quote_suppl_data structure
+ *
+ * @param p_quote [in] pointer to the input buffer for td_quote
+ * @param quote_size [in] length of p_quote(in bytes), should be the real size of ServTD td quote
+ * @param root_pub_key [in] pointer to Intel Root Public Key
+ * @param root_pub_key_size [in] length of Intel Root Public Key(in bytes)
+ * @param p_quote_collateral[IN] - This is a pointer to the Quote Verification Collaterals provided by the caller
+ * @param p_tdx_servtd_suppl_data [in, out] pointer to the output buffer, buffer size should not less than the size of servtd_tdx_quote_suppl_data
+ * @param p_tdx_servtd_suppl_data_size [in, out], pointer to the size in bytes of the servtd_tdx_quote_suppl_data buffer. If successful, the actual size of the data is returned.
+ *
+ * @return Status code of the operation, one of:
+ *      - SERVTD_ATTEST_SUCCESS
+ *      - SERVTD_ATTEST_ERROR_UNEXPECTED
+**/
+
+__attribute__((visibility("default"))) servtd_attest_error_t verify_quote_integrity_ex(
+            const void* p_quote, uint32_t quote_size,
+            const void* root_pub_key, uint32_t root_pub_key_size,
+            const tdx_ql_qv_collateral_t *p_quote_collateral,
+            void* p_tdx_servtd_suppl_data,
+            uint32_t* p_tdx_servtd_suppl_data_size);
+
+/**
  * Initialize heap space for ServTD Attestation library internal use.
  * Must be called only once by ServTD before other attestation lib APIs
  *
  * @param p_td_heap_base [in] the heap base address allocated by ServTD, the address should be aligned(0x1000).
+ *          Note: Despite the const qualifier, the heap memory will be mutated by the internal allocator (sbrk).
+ *          The const is cast away internally; it is retained here for compatibility with MigTD's Rust FFI bindings.
  * @param td_heap_size [in] the capacity of the heap, should be multiples of 0x1000 (in bytes).
  * @return Status code of the operation, one of:
  *      - SERVTD_ATTEST_SUCCESS: Successfully init heap for internal use.

@@ -28,8 +28,8 @@
 #pragma once
 #include <string>
 #include <stdint.h>
-#include "sgx_ql_lib_common.h"
-#include "sgx_dcap_qal.h"
+#include <sgx_ql_lib_common.h>
+#include <sgx_dcap_qal.h>
 
 typedef enum _internal_result_t
 {

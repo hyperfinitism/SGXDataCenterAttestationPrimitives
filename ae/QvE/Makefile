@@ -40,7 +40,7 @@ CRYPTO_LIB_NAME := sgx_tcrypto
 
 QVE_FILES := $(QVE_DIR)/qve.cpp $(QVE_DIR)/qve_logic.cpp
 ifdef SERVTD_ATTEST
-	QVE_FILES += $(QVE_DIR)/servtd_qve_logic.cpp
+	QVE_FILES += $(QVE_DIR)/servtd_qve_utils.cpp
 	QVE_C_FILES := $(DCAP_QG_DIR)/quote_wrapper/servtd_attest/servtd_utils.c
 
 QVE_OBJS := $(QVE_FILES:.cpp=.o) $(QVE_C_FILES:.c=.o)
@@ -60,11 +60,10 @@ QVE_CONFIG_FILE := $(QVE_DIR)/linux/config$(if $(FIPS),.fips).xml
 QVE_VER:= $(shell awk '$$2 ~ /QVE_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(DCAP_QG_DIR)/common/inc/internal/se_version.h)
 
 
-ENCLAVE_INC_PATH := -IInclude -IEnclave -I$(QVE_DIR) -I$(DCAP_QG_DIR)/quote_wrapper/common/inc -I$(DCAP_QG_DIR)/pce_wrapper/inc -I$(DCAP_QPL_DIR)/inc -I$(DCAP_QV_DIR)/appraisal/common $(COMMON_INCLUDE)
+ENCLAVE_INC_PATH := $(COMMON_INCLUDE) -IInclude -I$(QVE_DIR) -I$(DCAP_QG_DIR)/quote_wrapper/common/inc -I$(DCAP_QPL_DIR)/inc -I$(DCAP_QV_DIR)/appraisal/common
 
 ifdef SERVTD_ATTEST
-	ENCLAVE_INC_PATH += -I$(DCAP_QV_DIR)/dcap_quoteverify/inc -I$(DCAP_QG_DIR)/quote_wrapper/tdx_verify -I$(DCAP_QG_DIR)/quote_wrapper/td_migration/inc -I../../prebuilt/openssl/inc \
-			    -I$(DCAP_QG_DIR)/quote_wrapper/servtd_attest/inc
+	ENCLAVE_INC_PATH += -I$(DCAP_QV_DIR)/dcap_quoteverify/inc -I$(DCAP_QG_DIR)/quote_wrapper/tdx_verify -I$(DCAP_QG_DIR)/quote_wrapper/servtd_attest/inc
 	ifeq ($(DEBUG), 1)
 		ENCLAVE_CFLAGS += -O0 -ggdb -g
 	endif
@@ -126,11 +125,11 @@ ifdef SERVTD_ATTEST
 all: $(QVE_NAME) PREPARE_SGX_SSL
 else
 all: qve-logic-tests PREPARE_SGX_SSL prepare
-	make install_lib
+	$(MAKE) install_lib
 endif
 
 qve-logic-tests:
-	@$(MAKE) -C Test
+	+@$(MAKE) -C Test
 
 $(BUILD_DIR):
 	@$(MKDIR) $@
@@ -139,9 +138,9 @@ PREPARE_SGXSSL := ../../QuoteVerification/prepare_sgxssl.sh
 SGXSSL_HEADER_CHECK := $(SGXSSL_PACKAGE_PATH)/include/openssl/opensslconf.h
 PREPARE_SGX_SSL:
 ifdef SERVTD_ATTEST
-	@test -f $(SGXSSL_PACKAGE_PATH)/lib64/lib$(SGXSSL_TCRYPTO).a && test -f $(SGXSSL_PACKAGE_PATH)/lib64/lib$(SGXSSL_TLIB).a && test -f $(SGXSSL_HEADER_CHECK) || $(PREPARE_SGXSSL) SERVTD_ATTEST
+	@test -f $(SGXSSL_PACKAGE_PATH)/lib64/lib$(SGXSSL_TCRYPTO).a && test -f $(SGXSSL_PACKAGE_PATH)/lib64/lib$(SGXSSL_TLIB).a && test -f $(SGXSSL_HEADER_CHECK) || export MAKE_PARALLEL_JOBS=$(MAKE_PARALLEL_JOBS); $(PREPARE_SGXSSL) SERVTD_ATTEST
 else
-	@test -f $(SGXSSL_PACKAGE_PATH)/lib64/lib$(SGXSSL_TCRYPTO).a && test -f $(SGXSSL_PACKAGE_PATH)/lib64/lib$(SGXSSL_TLIB).a && test -f $(SGXSSL_HEADER_CHECK) || $(PREPARE_SGXSSL) $(if $(FIPS),FIPS)
+	@test -f $(SGXSSL_PACKAGE_PATH)/lib64/lib$(SGXSSL_TCRYPTO).a && test -f $(SGXSSL_PACKAGE_PATH)/lib64/lib$(SGXSSL_TLIB).a && test -f $(SGXSSL_HEADER_CHECK) || export MAKE_PARALLEL_JOBS=$(MAKE_PARALLEL_JOBS); $(PREPARE_SGXSSL) $(if $(FIPS),FIPS)
 endif
 
 $(SGXSSL_HEADER_CHECK): PREPARE_SGX_SSL
@@ -233,7 +232,7 @@ clean:
 	@rm -f *.map
 	@rm -f $(SERVTD_ATTEST_BUILD_DIR)/$(QVE_NAME)
 	@rm -f $(BUILD_DIR)/$(SIGNED_QVE_NAME)
-	@$(MAKE) -C Test clean
+	+@$(MAKE) -C Test clean
 
 SGXSSL_clean:
 	@echo "Cleaning sgxssl"

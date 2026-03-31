@@ -37,8 +37,8 @@
 #ifndef _SGX_QL_CORE_WRAPPER_H_
 #define _SGX_QL_CORE_WRAPPER_H_
 
-#include "sgx_quote_3.h"
-#include "sgx_ql_quote.h"
+#include <sgx_quote_3.h>
+#include <sgx_ql_quote.h>
 
 
 #define SGX_QL_MAX_ATT_KEY_IDS 10

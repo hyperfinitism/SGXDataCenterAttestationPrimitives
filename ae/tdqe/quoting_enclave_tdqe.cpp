@@ -42,7 +42,7 @@
 #include <string.h>
 
 #include "sgx_quote.h"
-#include "sgx_quote_5.h"
+#include <sgx_quote_5.h>
 #include "sgx_tseal.h"
 #include "sgx_utils.h"
 #include "tdqe_t.c"
@@ -51,7 +51,7 @@
 
 #include "quoting_enclave_tdqe.h"
 #include "user_types.h"
-#include "sgx_pce.h"
+#include <sgx_pce.h>
 #include "sgx_lfence.h"
 
 #define REF_N_SIZE_IN_BYTES    384

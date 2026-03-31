@@ -48,10 +48,12 @@ post-build: main-build
 	cp -r $(GTEST_CMAKE_BUILD_PATH)/lib $(GTEST_BUILD_PATH)
 
 main-build: pre-build
-	cd $(GTEST_CMAKE_BUILD_PATH) && cmake ../src
-	$(MAKE) -j4 -C $(GTEST_CMAKE_BUILD_PATH)
+	cmake -S ./gtest/src/ -B $(GTEST_CMAKE_BUILD_PATH)
+	cmake --build $(GTEST_CMAKE_BUILD_PATH) --parallel
 
 clean:
-	$(MAKE) clean -C $(GTEST_CMAKE_BUILD_PATH)
-	rm -r $(GTEST_CMAKE_BUILD_PATH)/*
-	rm -r $(GTEST_BUILD_PATH)/*
+	@if [ -f "$(GTEST_CMAKE_BUILD_PATH)"/Makefile ]; then \
+	  $(MAKE) clean -C $(GTEST_CMAKE_BUILD_PATH); \
+	fi
+	rm -rf $(GTEST_CMAKE_BUILD_PATH)/
+	rm -rf $(GTEST_BUILD_PATH)/

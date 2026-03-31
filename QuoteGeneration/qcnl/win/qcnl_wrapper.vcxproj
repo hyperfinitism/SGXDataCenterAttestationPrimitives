@@ -94,7 +94,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;QCNLWRAPPER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SGXSDKInstallPath)/include;../inc;../../pce_wrapper/inc;../../quote_wrapper/common/inc;../../common/inc/internal;../../../QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson;../../../tools/PCKCertSelection/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SGXSDKInstallPath)/include;../inc;../../quote_wrapper/common/inc;../../common/inc/internal;../../../QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson;../../../tools/PCKCertSelection/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeaderFile />
       <PrecompiledHeaderOutputFile />
@@ -120,7 +120,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;QCNLWRAPPER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SGXSDKInstallPath)/include;../inc;../../pce_wrapper/inc;../../quote_wrapper/common/inc;../../common/inc/internal;../../../QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson;../../../tools/PCKCertSelection/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SGXSDKInstallPath)/include;../inc;../../quote_wrapper/common/inc;../../common/inc/internal;../../../QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson;../../../tools/PCKCertSelection/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeaderFile />
       <PrecompiledHeaderOutputFile />
@@ -148,7 +148,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;QCNLWRAPPER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SGXSDKInstallPath)/include;../inc;../../pce_wrapper/inc;../../quote_wrapper/common/inc;../../common/inc/internal;../../../QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson;../../../tools/PCKCertSelection/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SGXSDKInstallPath)/include;../inc;../../quote_wrapper/common/inc;../../common/inc/internal;../../../QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson;../../../tools/PCKCertSelection/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeaderFile />
       <PrecompiledHeaderOutputFile />
@@ -177,7 +177,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;QCNLWRAPPER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SGXSDKInstallPath)/include;../inc;../../pce_wrapper/inc;../../quote_wrapper/common/inc;../../common/inc/internal;../../../QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson;../../../tools/PCKCertSelection/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SGXSDKInstallPath)/include;../inc;../../quote_wrapper/common/inc;../../common/inc/internal;../../../QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson;../../../tools/PCKCertSelection/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeaderFile />
       <PrecompiledHeaderOutputFile />

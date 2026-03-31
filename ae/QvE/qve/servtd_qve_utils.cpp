@@ -18,8 +18,14 @@ extern "C"
 #pragma GCC pop_options
 	void *__dso_handle __attribute__((weak)) = &(__dso_handle);  //libsgx_tsgxssl.a(tmem_mgmt.o): in function `_GLOBAL__sub_I_tmem_mgmt.cpp
 
+#ifndef UNUSED_PARAM
+#define UNUSED_PARAM(x) (void)(x)
+#endif
+
 	int sgx_is_within_enclave(const void *addr, size_t sz)   //qve.cpp
 	{
+		UNUSED_PARAM(addr);
+		UNUSED_PARAM(sz);
 		return 1;
 	}
 	uint64_t g_cpu_feature_indicator = 0;
@@ -31,7 +37,12 @@ extern "C"
 		static thread_data_t singleThreadData;
 		return &singleThreadData;
 	}
-	int __cxa_atexit( void (*f)(void *), void *p, void *d) {return 0;}; //libsgx_tsgxssl.a(tmem_mgmt.o): in function `_GLOBAL__sub_I_tmem_mgmt.cpp'; libsgx_tsgxssl.a(tpthread.o): in function `_GLOBAL__sub_I_tpthread.cpp'; TcbInfo.o: in function `__static_initialization_and_destruction_0(int, int)'
+	int __cxa_atexit( void (*f)(void *), void *p, void *d) {
+		UNUSED_PARAM(f);
+		UNUSED_PARAM(p);
+		UNUSED_PARAM(d);
+		return 0;
+	}; //libsgx_tsgxssl.a(tmem_mgmt.o): in function `_GLOBAL__sub_I_tmem_mgmt.cpp'; libsgx_tsgxssl.a(tpthread.o): in function `_GLOBAL__sub_I_tpthread.cpp'; TcbInfo.o: in function `__static_initialization_and_destruction_0(int, int)'
 
 	sgx_status_t sgx_oc_cpuidex(int cpuinfo[4], int leaf, int subleaf)  //libsgx_tstdc.a(se_cpuid.o): in function `sgx_cpuid'
 	{
@@ -39,7 +50,11 @@ extern "C"
 		return SGX_SUCCESS;
 	}
 
-	void *sgx_register_exception_handler(int is_first_handler, sgx_exception_handler_t exception_handler){return NULL;} //libsgx_tsgxssl.a(texceptions.o): in function `const_init_exception_handler'
+	void *sgx_register_exception_handler(int is_first_handler, sgx_exception_handler_t exception_handler){
+		UNUSED_PARAM(is_first_handler);
+		UNUSED_PARAM(exception_handler);
+		return NULL;
+	} //libsgx_tsgxssl.a(texceptions.o): in function `const_init_exception_handler'
 
 	typedef struct
 	{

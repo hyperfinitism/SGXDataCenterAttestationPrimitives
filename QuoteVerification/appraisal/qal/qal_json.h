@@ -29,7 +29,7 @@
 #include <string>
 #include <stdint.h>
 #include <map>
-#include "sgx_ql_lib_common.h"
+#include <sgx_ql_lib_common.h>
 
 #define FMSPC_SIZE 6
 typedef enum _claim_type_t

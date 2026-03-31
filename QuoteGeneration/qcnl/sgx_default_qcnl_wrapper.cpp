@@ -40,7 +40,7 @@
 #include "qcnl_config.h"
 #include "qcnl_def.h"
 #include "qcnl_util.h"
-#include "sgx_pce.h"
+#include <sgx_pce.h>
 #include <cstdarg>
 #include <stdexcept>
 

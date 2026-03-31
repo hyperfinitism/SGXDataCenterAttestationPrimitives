@@ -38,8 +38,8 @@
 #ifndef _SGX_DCAP_QV_INTERNAL_H_
 #define _SGX_DCAP_QV_INTERNAL_H_
 
-#include "sgx_qve_header.h"
-#include "sgx_ql_quote.h"
+#include <sgx_qve_header.h>
+#include <sgx_ql_quote.h>
 #include "sgx_error.h"
 #include "sgx_eid.h"
 #include <atomic>

@@ -25,9 +25,16 @@
     <ClCompile Include="..\src\mock\CrlStoreStub.cpp" />
     <ClCompile Include="..\src\mock\DistinguishedNameStub.cpp" />
     <ClCompile Include="..\src\mock\EnclaveIdentityStub.cpp" />
+    <ClCompile Include="..\src\mock\ExtensionStub.cpp" />
     <ClCompile Include="..\src\mock\IdentityTcbLevelStub.cpp" />
+    <ClCompile Include="..\src\mock\PckCertificateStub.cpp" />
+    <ClCompile Include="..\src\mock\QuoteStub.cpp" />
     <ClCompile Include="..\src\mock\SignatureStub.cpp" />
+    <ClCompile Include="..\src\mock\TcbComponentStub.cpp" />
+    <ClCompile Include="..\src\mock\TcbInfoStaticIdsStub.cpp" />
     <ClCompile Include="..\src\mock\TcbInfoStub.cpp" />
+    <ClCompile Include="..\src\mock\TcbLevelStub.cpp" />
+    <ClCompile Include="..\src\mock\TcbStub.cpp" />
     <ClCompile Include="..\src\mock\TdxModuleStub.cpp" />
     <ClCompile Include="..\src\mock\ValidityStub.cpp" />
     <ClCompile Include="..\src\qve_logic_tests.cpp" />

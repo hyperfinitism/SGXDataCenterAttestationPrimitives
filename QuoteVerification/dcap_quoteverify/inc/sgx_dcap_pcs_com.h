@@ -38,7 +38,7 @@
 #ifndef _SGX_DCAP_PCS_COM_H_
 #define _SGX_DCAP_PCS_COM_H_
 
-#include "sgx_ql_lib_common.h"
+#include <sgx_ql_lib_common.h>
 
 #if defined(__cplusplus)
 extern "C" {

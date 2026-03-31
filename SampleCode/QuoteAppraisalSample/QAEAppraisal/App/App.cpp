@@ -34,11 +34,11 @@
 #include <string>
 #include <assert.h>
 #include <fstream>
-#include "sgx_ql_quote.h"
+#include <sgx_ql_quote.h>
 #include "sgx_dcap_quoteverify.h"
-#include "sgx_dcap_qal.h"
+#include <sgx_dcap_qal.h>
 #include "jwt-cpp/jwt.h"
-#include "sgx_dcap_qae_tvl.h"
+#include <sgx_dcap_qae_tvl.h>
 #include "Enclave_u.h"
 #include "sgx_urts.h"
 

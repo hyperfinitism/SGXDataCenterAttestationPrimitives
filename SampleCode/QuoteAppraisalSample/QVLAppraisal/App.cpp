@@ -35,9 +35,9 @@
 #include <string>
 #include <assert.h>
 #include <fstream>
-#include "sgx_ql_quote.h"
+#include <sgx_ql_quote.h>
 #include "sgx_dcap_quoteverify.h"
-#include "sgx_dcap_qal.h"
+#include <sgx_dcap_qal.h>
 #include "jwt-cpp/jwt.h"
 
 #define DEFAULT_QUOTE   "../../QuoteGenerationSample/quote.dat"

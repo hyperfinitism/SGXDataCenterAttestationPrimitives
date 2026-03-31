@@ -81,10 +81,13 @@ run-tests: $(BIN_PATH)/UnitTests
 	@$(BIN_PATH)/UnitTests --gtest_output=xml:$(BIN_PATH)/report.xml
 
 ThirdParty:
-	$(MAKE) -C $(EXTERNAL_PATH)
+	+$(MAKE) -C $(EXTERNAL_PATH)
 
 clean:
 	rm -rf $(BUILD_PATH)
+
+# Avoid parallel builds for googletest objects to avoid build conflicts (disabled by default by its own CMake files)
+.NOTPARALLEL: $(OBJS_TEST) $(OBJS_MOCK)
 
 $(BIN_PATH)/UnitTests: $(OBJS_TEST) $(OBJS_MOCK) $(OBJS_SRC)
 	$(CXX) $(INCLUDE) $(TESTS_INCLUDE) $(CXXFLAGS) $(OBJS_TEST) $(OBJS_MOCK) $(OBJS_SRC) $(LD_GTEST) $(LDFLAGS) -o $@

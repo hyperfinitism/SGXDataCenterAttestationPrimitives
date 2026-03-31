@@ -28,7 +28,7 @@ uint32_t COMM_API sgx_tool_get_launch_token(
 #include <dlfcn.h>
 #endif
 #include "se_version.h"
-#include "sgx_quote_3.h"
+#include <sgx_quote_3.h>
 #include "network_wrapper.h"
 #include "utility.h"
      

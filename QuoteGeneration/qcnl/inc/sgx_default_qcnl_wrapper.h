@@ -37,7 +37,7 @@
 #define _SGX_DEFAULT_QCNL_WRAPPER_H_
 #pragma once
 
-#include "sgx_ql_lib_common.h"
+#include <sgx_ql_lib_common.h>
 #include <stddef.h>
 
 #define SGX_QCNL_MK_ERROR(x) (0x0000B000 | (x))

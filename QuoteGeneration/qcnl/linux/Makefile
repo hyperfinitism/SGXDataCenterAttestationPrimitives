@@ -18,7 +18,6 @@ CNL_Lib_C_Files := $(wildcard *.c ../*.c) ../../common/src/se_thread.c
 CNL_Lib_Include_Paths := -I../../quote_wrapper/common/inc       \
                          -I../inc -I$(SGX_SDK)/include          \
                          -I../../common/inc/internal            \
-                         -I../../pce_wrapper/inc                \
                          -I../../../QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson	\
                          -I../../../tools/PCKCertSelection/include \
                          -I$(PREBUILD_OPENSSL_PATH)/inc
@@ -89,7 +88,7 @@ $(CNL_Lib_Name_Static): $(CNL_Lib_Cpp_Objects) $(CNL_Lib_C_Objects) $(PCK_Select
 	$(AR) rsD $(CNL_Lib_Name_Static) $(CNL_Lib_Cpp_Objects) $(CNL_Lib_C_Objects) $(PCK_Selection_Cpp_Objects)
 
 $(PCK_Selection_Lib_Static):
-	make -C ../../../tools/PCKCertSelection/PCKCertSelectionLib -f Makefile.static_lib
+	+$(MAKE) -C ../../../tools/PCKCertSelection/PCKCertSelectionLib -f Makefile.static_lib
 force_look:
 	true
 
@@ -101,6 +100,6 @@ $(BUILD_DIR):
 clean:
 	@$(RM) .config_* $(CNL_Lib_Name) $(CNL_Lib_Cpp_Objects) $(CNL_Lib_Cpp_Deps) $(CNL_Lib_Name_Dynamic) $(CNL_Lib_Name_Static)
 	@$(RM) $(addprefix $(BUILD_DIR)/,$(CNL_Lib_Name_Dynamic) $(CNL_Lib_Name_Dynamic_Full) $(CNL_Lib_Name_Dynamic_Major))
-	make -C ../../../tools/PCKCertSelection/PCKCertSelectionLib -f Makefile.static_lib clean
+	+$(MAKE) -C ../../../tools/PCKCertSelection/PCKCertSelectionLib -f Makefile.static_lib clean
 
 

@@ -19,7 +19,6 @@ INCLUDE :=  -I. \
 			-I$(TOP_DIR)/../QuoteVerification/dcap_quoteverify/inc \
 			-I$(QV_QVE_INC_DIR)  \
 			-I../../qgs_msg_lib/inc \
-			-I../../../pce_wrapper/inc
 
 Tdx_Verify_CFLAGS := $(INCLUDE) $(SERVTD_ATTEST_CFLAGS)
 Tdx_Verify_CFLAGS += -Werror

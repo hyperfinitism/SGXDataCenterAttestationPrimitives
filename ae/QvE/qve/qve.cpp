@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2011-2025 Intel Corporation
+ * Copyright(c) 2011-2026 Intel Corporation
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -24,8 +24,8 @@
 #endif //SGX_TRUSTED
 #else //SERVTD_ATTEST
 #include "sgx_dcap_qv_internal.h"
-#include "sgx_quote_4.h"
-#include "sgx_quote_5.h"
+#include <sgx_quote_4.h>
+#include <sgx_quote_5.h>
 #define memset_s(a,b,c,d) memset(a,c,d)
 #define memcpy_s(a,b,c,d) (memcpy(a,c,b) && 0)
 #endif //SERVTD_ATTEST
@@ -34,8 +34,12 @@
 #ifndef SGX_TRUSTED
 #define SGX_TRUSTED
 #endif //SGX_TRUSTED
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"  //FIXME(pre-existing): abort()/sgx_register_exception_handler()/mbsnrtowcs()/wcsnrtombs() decls are redundant and already coming from std headers. If OURS are to prevail, they should be included FIRST (ideally avoid redundant decls in the first place).
 #include "servtd_utils.h"
 #include "servtd_qve_utils.h"
+#include <string>  //Advance-include <string> within warning-silenced region, for the later include (few lines down) to be no-op.
+#pragma GCC diagnostic pop
 #include "tdx_verify.h"
 #include "servtd_com.h"
 #define EXPORT_API __attribute__ ((visibility("default")))
@@ -55,7 +59,7 @@
 #include "CertVerification/X509Constants.h"
 #include "Utils/TimeUtils.h"
 #include "SgxEcdsaAttestation/AttestationParsers.h"
-#include "sgx_qve_header.h"
+#include <sgx_qve_header.h>
 #include "sgx_qve_def.h"
 #include "qve_logic.h"
 
@@ -319,78 +323,6 @@ static std::string byte_to_hexstring(const uint8_t* data, size_t len, bool big_e
 
 }
 
-#define TCB_COMPONENT_LEN   16
-
-static bool isTdxTcbHigherOrEqual(const Quote& quote,
-                           const parser::json::TcbLevel& tcbLevel)
-{
-    const auto& teeTcbSvn = quote.getTeeTcbSvn();
-    uint32_t index = 0;
-    if (quote.getHeader().version > constants::QUOTE_VERSION_3 && teeTcbSvn[1] > 0)
-    {
-        index = 2;
-    }
-    for(; index < TCB_COMPONENT_LEN; ++index)
-    {
-        const auto componentValue = teeTcbSvn[index];
-        const auto& otherComponentValue = tcbLevel.getTdxTcbComponent(index);
-        if(componentValue < otherComponentValue.getSvn())
-        {
-            // If *ANY* TCB component SVN is lower than TCB level is considered lower
-            return false;
-        }
-    }
-    // but for TCB level to be considered higher it requires *EVERY* SVN to be higher or equal
-    return true;
-}
-
-static bool isTcbComponentSvnHigherOrEqual(const parser::x509::PckCertificate& pckCert,
-                           const parser::json::TcbLevel& tcbLevel)
-{
-    for(uint32_t index = 0; index < TCB_COMPONENT_LEN; ++index)
-    {
-        const auto componentValue = pckCert.getTcb().getSgxTcbComponentSvn(index);
-        const auto otherComponentValue = tcbLevel.getSgxTcbComponentSvn(index);
-        if(componentValue < otherComponentValue)
-        {
-            // If *ANY* TCB component SVN is lower than TCB component SVN is considered lower
-            return false;
-        }
-    }
-    // but for TCB component SVN to be considered higher it requires that *EVERY* TCB component SVN to be higher or equal
-    return true;
-}
-
-const json::TcbLevel& getMatchingTcbLevel(const json::TcbInfo *tcbInfo,
-                            const x509::PckCertificate &pckCert,
-                            const Quote &quote)
-{
-    const auto &tcbs = tcbInfo->getTcbLevels();
-    const auto certPceSvn = pckCert.getTcb().getPceSvn();
-
-    for (const auto& tcb : tcbs)
-    {
-        if(isTcbComponentSvnHigherOrEqual(pckCert, tcb) && certPceSvn >= tcb.getPceSvn())
-        {
-            if (tcbInfo->getVersion() >= 3 &&
-                tcbInfo->getId() == parser::json::TcbInfo::TDX_ID &&
-                quote.getHeader().teeType == constants::TEE_TYPE_TDX)
-            {
-                if (isTdxTcbHigherOrEqual(quote, tcb))
-                {
-                    return tcb;
-                }
-            }
-            else
-            {
-                return tcb;
-            }
-        }
-    }
-
-    throw SGX_QL_TCBINFO_UNSUPPORTED_FORMAT;
-}
-
 #ifdef SERVTD_ATTEST
 
 int getTdxModuleTcblevel(const json::TcbInfo* tcbInfo,
@@ -629,23 +561,35 @@ quote3_error_t get_fmspc_ca_from_quote(const uint8_t* p_quote, uint32_t quote_si
 
 #ifdef SERVTD_ATTEST
 
+constexpr const char* tcbStatusToString(TcbStatus status)
+{
+    switch (status) {
+        case TcbStatus::UpToDate:                     return "UpToDate";
+        case TcbStatus::ConfigurationNeeded:          return "ConfigurationNeeded";
+        case TcbStatus::OutOfDate:                    return "OutOfDate";
+        case TcbStatus::OutOfDateConfigurationNeeded: return "OutOfDateConfigurationNeeded";
+        case TcbStatus::Revoked:                      return "Revoked";
+        default:                                      return "Unknown";
+    }
+}
+
 /**
     * @brief Get the matching QE TCB level based on ISVSVN
     * @param enclaveIdentity The QE identity
     * @param quote The quote object containing ISVSVN information
     * @return The matching TCB level object if found, otherwise throws an exception
 */
-const TCBLevel getMatchingQETcbLevel(const json::EnclaveIdentity &enclaveIdentity, const Quote& quote) {
+json::IdentityTcbLevel getMatchingQETcbLevel(const json::EnclaveIdentity &enclaveIdentity, const Quote& quote) {
 
     // Get matching QE identity TCB levels.
-    const auto& qe_identity_tcb_levels = enclaveIdentity.getTcbLevels();
+    const auto& qe_identity_tcb_levels = enclaveIdentity.getIdentityTcbLevels();
 
     // Ensure the QE identity has at least one TCBLevel.
     if (qe_identity_tcb_levels.empty()) {
-        throw SGX_QL_QEIDENTITY_UNSUPPORTED_FORMAT;
+        throw SGX_QL_QEIDENTITY_UNSUPPORTED_FORMAT;  //FIXME(pre-existing): throws raw integer error code. Consider throwing a proper exception, descended from std::exception
     }
 
-    const TCBLevel * matchingTCBLevel = nullptr;
+    const json::IdentityTcbLevel * matchingTCBLevel = nullptr;
 
     // The premise of this code is that the server returns a sequence ordered from top to bottom, and
     // we need to find the largest TCB level among the TCB Levels smaller than ours based on ISVSVN.
@@ -659,7 +603,7 @@ const TCBLevel getMatchingQETcbLevel(const json::EnclaveIdentity &enclaveIdentit
         return *matchingTCBLevel;
     }
 
-    throw SGX_QL_TCBINFO_UNSUPPORTED_FORMAT;
+    throw SGX_QL_TCBINFO_UNSUPPORTED_FORMAT;  //FIXME(pre-existing): throws raw integer error code. Consider throwing a proper exception, descended from std::exception
 }
 /**
  * @brief Return supplemental data for TD Migration
@@ -683,7 +627,7 @@ const TCBLevel getMatchingQETcbLevel(const json::EnclaveIdentity &enclaveIdentit
 static quote3_error_t servtd_set_quote_supplemental_data(
     const Quote &quote, const x509::PckCertificate &pckCert,
     const json::TcbInfo *tcb_info_obj, uint8_t *p_fmspc, size_t p_fmspc_size,
-    const TCBLevel &qe_tcb_info, std::unique_ptr<EnclaveIdentityV2>& enclaveIdentity, uint8_t *p_servtd_supplemental_data,
+    const json::IdentityTcbLevel &qe_tcb_info, const json::EnclaveIdentity &enclaveIdentity, uint8_t *p_servtd_supplemental_data,
     uint32_t *p_servtd_supplemental_data_size) {
 
     if (tcb_info_obj == NULL) {
@@ -722,7 +666,7 @@ static quote3_error_t servtd_set_quote_supplemental_data(
                  p_fmspc_size) != 0) {
         return SGX_QL_ERROR_UNEXPECTED;
     }
-    // get TCB date of TCB level in TCB Info
+    // get platform TCB date and TCB level in TCB Info
     //
     auto tcb = getMatchingTcbLevel(tcb_info_obj, pckCert, quote);
     auto tdx_svn = tcb.getTdxTcbComponents();
@@ -738,6 +682,36 @@ static quote3_error_t servtd_set_quote_supplemental_data(
             p_servtd_suppl_data->sgx_tcb_components[i] = sgx_svn[i].getSvn();
         }
     }
+
+    p_servtd_suppl_data->platform_tcb_date = tcb.getTcbDate();
+
+    auto st = tcb.getStatus();
+    size_t len = st.length();
+
+    if (len > TCB_STATUS_LEN - 1)
+        return SGX_QL_ERROR_UNEXPECTED;
+
+    std::copy_n(st.c_str(), len, p_servtd_suppl_data->tcb_status);
+    p_servtd_suppl_data->tcb_status[len] = '\0';
+
+    // Get QE TCB date and TCB status
+    p_servtd_suppl_data->qe_tcb_date = qe_tcb_info.getTcbDate();
+
+    auto qe_st = qe_tcb_info.getTcbStatus();
+    const char* qe_status_str = tcbStatusToString(qe_st);
+    size_t qe_status_len = strlen(qe_status_str);
+
+    if (qe_status_len > TCB_STATUS_LEN - 1) {
+        return SGX_QL_ERROR_UNEXPECTED;
+    }
+
+    std::copy_n(qe_status_str, qe_status_len, p_servtd_suppl_data->qe_tcb_status);
+
+    p_servtd_suppl_data->qe_tcb_status[qe_status_len] = '\0';
+
+    p_servtd_suppl_data->tcb_date = (p_servtd_suppl_data->platform_tcb_date < p_servtd_suppl_data->qe_tcb_date) ?
+                                    p_servtd_suppl_data->platform_tcb_date : p_servtd_suppl_data->qe_tcb_date;
+
     // Get Tdx Module major version
     p_servtd_suppl_data->tdx_module_major_ver = quote.getTeeTcbSvn()[1];
     uint8_t matchedTcbLevel = 0;
@@ -751,7 +725,7 @@ static quote3_error_t servtd_set_quote_supplemental_data(
     }
     auto qe_report = quote.getQeReport();
     p_servtd_suppl_data->misc_select = qe_report.miscSelect;
-    auto misc_mask = enclaveIdentity->getMiscselectMask();
+    auto misc_mask = enclaveIdentity.getMiscselectMask();
     if(misc_mask.size() == MISCSELECTMASK_LEN) {
         std::copy(misc_mask.begin(), misc_mask.end(), p_servtd_suppl_data->misc_select_mask);
     }
@@ -762,7 +736,7 @@ static quote3_error_t servtd_set_quote_supplemental_data(
         return SGX_QL_ERROR_UNEXPECTED;
     }
 
-    auto attr_mask = enclaveIdentity->getAttributesMask();
+    auto attr_mask = enclaveIdentity.getAttributesMask();
     if(attr_mask.size() == ATTRIBUTESELECTMASK_LEN) {
         std::copy(attr_mask.begin(), attr_mask.end(), p_servtd_suppl_data->attributes_mask);
     }
@@ -932,7 +906,7 @@ static quote3_error_t qve_set_quote_supplemental_data(const Quote &quote,
             //platform TCB level date
             supplemental_data->platform_tcb_level_date_tag = matching_tcb_info_tcb_date;
 
-            supplemental_data->tcb_level_date_tag = (matching_tcb_info_tcb_date < qe_identity_date) ? matching_tcb_info_tcb_date : qe_identity_date;
+            supplemental_data->tcb_level_date_tag = getEarlierDate(matching_tcb_info_tcb_date, qe_identity_date);
 
         }
 
@@ -1349,27 +1323,25 @@ quote3_error_t sgx_qve_verify_quote(
         return SGX_QL_ERROR_INVALID_PARAMETER;
     }
 #ifdef SERVTD_ATTEST
-    if (p_td_report_body == NULL || root_pub_key == NULL || p_td_report_body_size == NULL || (*p_td_report_body_size) < sizeof(servtd_tdx_quote_suppl_data) || root_pub_key_size < 0)  {
+   if (p_td_report_body == NULL || root_pub_key == NULL || p_td_report_body_size == NULL || (*p_td_report_body_size) < sizeof(servtd_tdx_quote_suppl_data) || root_pub_key_size <= 0)  {
            return SGX_QL_ERROR_INVALID_PARAMETER;
     }
     unsigned char fmspc_from_quote[FMSPC_SIZE] = { 0 };
     unsigned char ca_from_quote[CA_SIZE] = { 0 };
+    bool collateral_flag = false;
+
+    if (SGX_QL_SUCCESS != get_fmspc_ca_from_quote(p_quote, quote_size, fmspc_from_quote, FMSPC_SIZE, ca_from_quote, CA_SIZE)) {
+        return SGX_QL_ERROR_INVALID_PARAMETER;
+    }
 
     if(p_quote_collateral == NULL) {
-
-        quote3_error_t retrieve_fmspc_ret;
-        retrieve_fmspc_ret = get_fmspc_ca_from_quote(p_quote, quote_size, fmspc_from_quote, FMSPC_SIZE, ca_from_quote, CA_SIZE);
-        if(retrieve_fmspc_ret != SGX_QL_SUCCESS)
-        {
-            return SGX_QL_ERROR_INVALID_PARAMETER;
-        }
-
         tdx_verify_error_t coll_ret = tdx_att_get_collateral((const uint8_t *) fmspc_from_quote, FMSPC_SIZE, (const char *)ca_from_quote, (tdx_ql_qve_collateral_t**)&p_quote_collateral);
         if(coll_ret != TDX_VERIFY_SUCCESS)
         {
             return SGX_QL_UNABLE_TO_GET_COLLATERAL;
         }
 
+        collateral_flag = true;
     }
 
 #endif
@@ -1385,6 +1357,13 @@ quote3_error_t sgx_qve_verify_quote(
         expiration_check_date <= 0 ||
         (p_qve_report_info != NULL && !sgx_is_within_enclave(p_qve_report_info, sizeof(*p_qve_report_info))) ||
         (p_supplemental_data == NULL && supplemental_data_size != 0)) {
+
+#ifdef SERVTD_ATTEST
+        if(p_quote_collateral != NULL && collateral_flag) {
+			tdx_att_free_collateral((tdx_ql_qve_collateral_t*)p_quote_collateral);
+			p_quote_collateral = NULL;
+	    }
+#endif
         //one or more invalid parameters
         //
         return SGX_QL_ERROR_INVALID_PARAMETER;
@@ -1397,10 +1376,10 @@ quote3_error_t sgx_qve_verify_quote(
          p_quote_collateral->version != QVE_COLLATERAL_VERSOIN31 &&
          p_quote_collateral->version != QVE_COLLATERAL_VERSION4) {
 #ifdef SERVTD_ATTEST
-		if(p_quote_collateral != NULL) {
+        if(p_quote_collateral != NULL && collateral_flag) {
 			tdx_att_free_collateral((tdx_ql_qve_collateral_t*)p_quote_collateral);
 			p_quote_collateral = NULL;
-		}
+	    }
 #endif
 
         return SGX_QL_COLLATERAL_VERSION_NOT_SUPPORTED;
@@ -1677,7 +1656,8 @@ quote3_error_t sgx_qve_verify_quote(
 //set the expiration_check_data to pass validation, since in migration, we don't care time
 #ifdef SERVTD_ATTEST
             time_t * _p_expiration_check_date = const_cast<time_t *>(&expiration_check_date);
-            *_p_expiration_check_date = (verificationCollateralInfo.issue_date_max + earliest_expiration_date) / 2;
+            // Assumes all collateral validity windows (CRLs, cert chains, TCB Info, QE Identity) overlap, i.e. latest_issue_date < earliest_expiration_date
+            *_p_expiration_check_date = (supplemental_dates.latest_issue_date + supplemental_dates.earliest_expiration_date) / 2;
             set_time = *_p_expiration_check_date;
 #endif
 
@@ -1734,7 +1714,7 @@ quote3_error_t sgx_qve_verify_quote(
                     break;
                 }
             }
-            catch (const std::exception &e)
+            catch (...)  // FIXME(pre-existing): getMatchingQETcbLevel/getMatchingTcbLevel throw raw quote3_error_t, not std::exception
             {
                 ret = SGX_QL_ERROR_UNEXPECTED;
                 break;
@@ -1777,7 +1757,7 @@ quote3_error_t sgx_qve_verify_quote(
         }
     }
 #else
-	if(p_quote_collateral != NULL) {
+	if(p_quote_collateral != NULL && collateral_flag) {
 			tdx_att_free_collateral((tdx_ql_qve_collateral_t*)p_quote_collateral);
 			p_quote_collateral = NULL;
 	}
@@ -1807,6 +1787,7 @@ uint8_t do_verify_quote_integrity(
 		uint32_t quote_size,
 		const uint8_t * root_pub_key,
 		uint32_t root_pub_key_size,
+        const tdx_ql_qv_collateral_t *p_quote_collateral,
 		uint8_t *p_td_report_body,
 		uint32_t * p_td_report_body_size) {
 
@@ -1814,26 +1795,25 @@ uint8_t do_verify_quote_integrity(
 	sgx_ql_qv_result_t quote_verification_result;
 
   // 3 report types supported, minimum size is TD_REPORT10_BYTE_LEN. The input size should be larger than the minimum size
-	if (p_td_report_body == NULL || root_pub_key == NULL || p_td_report_body_size == NULL || (*p_td_report_body_size) < TD_REPORT10_BYTE_LEN || root_pub_key_size < 0)  {
+	if (p_td_report_body == NULL || root_pub_key == NULL || p_td_report_body_size == NULL || (*p_td_report_body_size) < TD_REPORT10_BYTE_LEN || root_pub_key_size <= 0)  {
 		return SGX_TD_VERIFY_ERROR(SGX_QL_ERROR_INVALID_PARAMETER);
 	}
 
-
-	quote3_error_t ret = sgx_qve_verify_quote(p_quote,
-			quote_size,
-			NULL,
-			1, //expiration_check_date, just set to 1 to pass sanity check
-			&collateral_expiration_status,
-			&quote_verification_result,
-			NULL, // qve report
-			0,    // supplemental data size
-			NULL, // supplemental data
+    quote3_error_t ret = sgx_qve_verify_quote(
+            p_quote,
+            quote_size,
+            p_quote_collateral,
+            1, //expiration_check_date, just set to 1 to pass sanity check
+            &collateral_expiration_status,
+            &quote_verification_result,
+            NULL, // qve report
+            0,    // supplemental data size
+            NULL, // supplemental data
             root_pub_key,
             root_pub_key_size,
-			p_td_report_body,
-			p_td_report_body_size);
-
-			return SGX_TD_VERIFY_ERROR(ret);
+            p_td_report_body,
+            p_td_report_body_size);
+	return static_cast<uint8_t>(SGX_TD_VERIFY_ERROR(ret));
 }
 
 #endif
@@ -1853,8 +1833,8 @@ uint8_t do_verify_quote_integrity(
 #include <time.h>
 
 #include "QuoteVerification/Quote.h"
-#include "sgx_quote_4.h"
-#include "sgx_quote_5.h"
+#include <sgx_quote_4.h>
+#include <sgx_quote_5.h>
 #include "OpensslHelpers/Bytes.h"
 #include "sgx_base64.h"
 #include "ec_key.h"

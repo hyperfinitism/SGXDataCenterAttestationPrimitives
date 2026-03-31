@@ -167,9 +167,9 @@ pre-build:
 post-build: main-build
 
 main-build: pre-build
-	@$(MAKE) --no-print-directory $(BIN_PATH)/mpa_registration
-	@$(MAKE) --no-print-directory $(BIN_PATH)/mpa_manage
-	@$(MAKE) --no-print-directory $(BIN_PATH)/UnitTests
+	+@$(MAKE) --no-print-directory $(BIN_PATH)/mpa_registration
+	+@$(MAKE) --no-print-directory $(BIN_PATH)/mpa_manage
+	+@$(MAKE) --no-print-directory $(BIN_PATH)/UnitTests
 
 deb_pkg: post-build
 	@mkdir -p $(INSTALL_PATH)
@@ -225,7 +225,7 @@ $(LIB_PATH)/libmpa_management.a: $(OBJS_MANAGEMENT) $(OBJS_SGX_CAPABLE)
 	@echo "$@"
 
 ThirdParty:
-	$(MAKE) -C $(EXTERNAL_PATH)
+	+$(MAKE) -C $(EXTERNAL_PATH)
 
 $(LIB_PATH)/libmpa_network.so: $(OBJS_NETWORK)
 	@$(CXX) $^ -Wl,-soname=libmpa_network.so.1 $(LDFLAGS_SO) -lcurl -o $@

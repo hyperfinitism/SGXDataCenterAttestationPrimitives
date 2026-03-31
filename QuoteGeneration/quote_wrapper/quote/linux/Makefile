@@ -22,7 +22,7 @@ vpath %.cpp .. .
 Quote_C_Files := qe3_u.c id_enclave_u.c se_thread.c se_trace.c
 Quote_Cpp_Files := qe_logic.cpp sgx_ql_core_wrapper.cpp
 
-Quote_Include_Paths := -I$(SGX_SDK)/include -I../inc -I../../common/inc -I./ -I$(QE3_Dir)/.. -I$(TOP_DIR)/pce_wrapper/inc -I$(COMMON_DIR)/inc/internal -I$(COMMON_DIR)/inc/internal/linux
+Quote_Include_Paths := -I$(SGX_SDK)/include -I../inc -I../../common/inc -I./ -I$(QE3_Dir)/.. -I$(COMMON_DIR)/inc/internal -I$(COMMON_DIR)/inc/internal/linux
 
 Quote_C_Flags := $(COMMON_FLAGS) -g -fPIC -Werror -Wno-attributes $(Quote_Include_Paths)
 
@@ -75,10 +75,10 @@ $(BUILD_DIR):
 	@$(MKDIR) $@
 
 $(QE3_Signed_Name): force_look
-	@make -C $(QE3_Dir)
+	+@$(MAKE) -C $(QE3_Dir)
 
 $(ID_ENCLAVE_Signed_Name): force_look
-	@make -C $(ID_ENCLAVE_Dir)
+	+@$(MAKE) -C $(ID_ENCLAVE_Dir)
 
 force_look:
 	true
@@ -87,6 +87,6 @@ force_look:
 
 clean:
 	@$(RM) .config_* $(Quote_Name) $(Quote_C_Objects) $(Quote_Cpp_Objects) qe3_u.* id_enclave_u.* $(BUILD_DIR)/$(Quote_Name)
-	@make -C $(QE3_Dir) clean
-	@make -C $(ID_ENCLAVE_Dir) clean
+	+@$(MAKE) -C $(QE3_Dir) clean
+	+@$(MAKE) -C $(ID_ENCLAVE_Dir) clean
 

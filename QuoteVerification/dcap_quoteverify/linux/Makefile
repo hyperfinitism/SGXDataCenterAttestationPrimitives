@@ -24,7 +24,6 @@ QVL_VERIFY_INC	:= -I$(QVE_SRC_PATH)/Include \
                    -I$(SGX_SDK)/include \
                    -I$(DCAP_QG_DIR)/common/inc/internal \
                    -I$(DCAP_QG_DIR)/common/inc/internal/linux \
-                   -I$(DCAP_QG_DIR)/pce_wrapper/inc \
                    -I$(PREBUILD_OPENSSL_PATH)/inc \
                    $(QVL_LIB_INC) \
                    -I$(DCAP_QPL_DIR)/inc \
@@ -100,7 +99,7 @@ install_lib: $(QVL_VERIFY_LIB_NAME_Dynamic) | $(BUILD_DIR)
 	@$(LN) $(QVL_VERIFY_LIB_NAME_Dynamic_Major) $|/$(QVL_VERIFY_LIB_NAME_Dynamic)
 
 ifeq ($(GEN_STATIC),1)
-	@$(MAKE) $(QVL_VERIFY_LIB_NAME_Static)
+	+@$(MAKE) $(QVL_VERIFY_LIB_NAME_Static)
 	@$(CP) $(QVL_VERIFY_LIB_NAME_Static) $|
 endif
 
@@ -169,7 +168,7 @@ $(QVL_VERIFY_LIB_NAME_Static): $(QVL_VERIFY_CPP_OBJS_STATIC) $(QVL_VERIFY_C_OBJS
 
 .PHONY: qal
 qal:
-	$(MAKE) -C $(QAL_APPRAISAL_DIR) $(QAL_Static_Lib_Name)
+	+$(MAKE) -C $(QAL_APPRAISAL_DIR) $(QAL_Static_Lib_Name)
 
 force_look:
 	true
@@ -190,4 +189,4 @@ clean:
 	@$(RM) $(QVL_LIB_NAME) $(QVL_PARSER_NAME)
 	@$(RM) *.1
 	@$(RM) $(QVE_CPP_OBJ) $(QVE_LOGIC_CPP_OBJ)
-	@$(MAKE) -C $(QAL_APPRAISAL_DIR) clean
+	+@$(MAKE) -C $(QAL_APPRAISAL_DIR) clean

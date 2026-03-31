@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2025 Intel Corporation
+ * Copyright(c) 2025-2026 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -11,14 +11,20 @@
 #include "SgxEcdsaAttestation/QuoteVerification.h"
 #include "SgxEcdsaAttestation/AttestationParsers.h"
 #include "qve_logic.h"
+#include "QuoteVerification/QuoteConstants.h"
+#include "QuoteVerification/Quote.h"
+#include "QuoteVerification/QuoteStructures.h"
 #include "MockValidity.h"
 #include "MockCertificate.h"
 #include "MockCertificateChain.h"
 #include "MockEnclaveIdentity.h"
 #include "MockTcbInfo.h"
 #include "MockCrlStore.h"
+#include "MockPckCertificate.h"
+#include "mock/TestQuote.h"
 
 using namespace intel::sgx::dcap;
+using namespace intel::sgx::dcap::constants;
 using namespace intel::sgx::dcap::parser;
 using namespace intel::sgx::dcap::parser::x509;
 using namespace intel::sgx::dcap::parser::json;
@@ -495,4 +501,499 @@ TEST_F(QveGetCollateralDates, ValidInputs_ReturnsSuccess) {
     EXPECT_EQ(supplemental_dates.qe_iden_earliest_issue_date, 1743568400);
     EXPECT_EQ(supplemental_dates.qe_iden_latest_issue_date, 1748832000);
     EXPECT_EQ(supplemental_dates.qe_iden_earliest_expiration_date, 1775094400);
+}
+
+TEST(getEarlierDateTest, ReturnsOlderDate) {
+    // Test when date1 is older
+    time_t date1 = 1735686000; // 2025-01-01 00:00:00 UTC
+    time_t date2 = 1767222000; // 2026-01-01 00:00:00 UTC
+    EXPECT_EQ(getEarlierDate(date1, date2), date1);
+
+    // Test when date2 is older
+    EXPECT_EQ(getEarlierDate(date2, date1), date1);
+
+    // Test with very close dates (1 second difference)
+    time_t date3 = 1735686001; // 2025-01-01 00:00:01 UTC
+    EXPECT_EQ(getEarlierDate(date1, date3), date1);
+}
+
+TEST(getEarlierDateTest, HandlesEqualDates) {
+    time_t date = 1735686000; // 2025-01-01 00:00:00 UTC
+    EXPECT_EQ(getEarlierDate(date, date), date);
+}
+
+TEST(getEarlierDateTest, HandlesZeroValues) {
+    time_t date = 1735686000; // 2025-01-01 00:00:00 UTC
+    time_t zero_date = 0;
+
+    // Test with date1 as zero
+    EXPECT_EQ(getEarlierDate(zero_date, date), zero_date);
+
+    // Test with date2 as zero
+    EXPECT_EQ(getEarlierDate(date, zero_date), zero_date);
+
+    // Test with both dates as zero
+    EXPECT_EQ(getEarlierDate(zero_date, zero_date), zero_date);
+}
+
+// Unit tests for isTdxTcbHigherOrEqual
+TEST(IsTdxTcbHigherOrEqualTest, AllComponentsEqual) {
+    // given: Quote with all TDX TCB components equal to TcbLevel components
+    TestQuote quote;
+    quote.setHeaderVersion(QUOTE_VERSION_3);
+    quote.setTdReport10TeeTcbSvn({5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5});
+
+    std::vector<TcbComponent> tdx_components(16, TcbComponent(5));
+
+    TcbLevel tcb_level("", {}, tdx_components, 0, "UpToDate", 0, {});
+
+    // when
+    bool result = isTdxTcbHigherOrEqual(quote, tcb_level);
+
+    // then
+    EXPECT_TRUE(result);
+}
+
+TEST(IsTdxTcbHigherOrEqualTest, AllComponentsHigher) {
+    // given: Quote with all TDX TCB components higher than TcbLevel components
+    TestQuote quote;
+    quote.setHeaderVersion(QUOTE_VERSION_3);
+    quote.setTdReport10TeeTcbSvn({10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10});
+
+    std::vector<TcbComponent> tdx_components(16, TcbComponent(5));
+
+    TcbLevel tcbLevel("", {}, tdx_components, 0, "UpToDate", 0, {});
+
+    // when
+    bool result = isTdxTcbHigherOrEqual(quote, tcbLevel);
+
+    // then
+    EXPECT_TRUE(result);
+}
+
+TEST(IsTdxTcbHigherOrEqualTest, OneComponentLower) {
+    // given: Quote with one TDX TCB component lower than TcbLevel
+    TestQuote quote;
+    quote.setHeaderVersion(QUOTE_VERSION_4);
+    quote.setTdReport10TeeTcbSvn({10, 10, 10, 10, 10, 3, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10});
+
+    std::vector<TcbComponent> tdx_components(16, TcbComponent(5));
+
+    TcbLevel tcbLevel("", {}, tdx_components, 0, "UpToDate", 0, {});
+
+    // when
+    bool result = isTdxTcbHigherOrEqual(quote, tcbLevel);
+
+    // then
+    EXPECT_FALSE(result);
+}
+
+TEST(IsTdxTcbHigherOrEqualTest, QuoteVersion3WithZeroIndex1) {
+    // given: Quote version 3 with teeTcbSvn[1] == 0, should start from index 0
+    TestQuote quote;
+    quote.setHeaderVersion(QUOTE_VERSION_3);
+    quote.setTdReport10TeeTcbSvn({5, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5});
+
+    std::vector<TcbComponent> tdxComponents = {
+        TcbComponent(5), TcbComponent(0), TcbComponent(5), TcbComponent(5),
+        TcbComponent(5), TcbComponent(5), TcbComponent(5), TcbComponent(5),
+        TcbComponent(5), TcbComponent(5), TcbComponent(5), TcbComponent(5),
+        TcbComponent(5), TcbComponent(5), TcbComponent(5), TcbComponent(5)
+    };
+    TcbLevel tcbLevel("", {}, tdxComponents, 0, "UpToDate", 0, {});
+
+    // when
+    bool result = isTdxTcbHigherOrEqual(quote, tcbLevel);
+
+    // then
+    EXPECT_TRUE(result);
+}
+
+TEST(IsTdxTcbHigherOrEqualTest, QuoteVersion4WithNonZeroIndex1) {
+    // given: Quote version 4 with teeTcbSvn[1] > 0, should start from index 2
+    TestQuote quote;
+    quote.setHeaderVersion(QUOTE_VERSION_4);
+    quote.setTdReport10TeeTcbSvn({0, 1, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10});
+
+    std::vector<TcbComponent> tdx_components(16, TcbComponent(5));
+
+    TcbLevel tcbLevel("", {}, tdx_components, 0, "UpToDate", 0, {});
+
+    // when
+    bool result = isTdxTcbHigherOrEqual(quote, tcbLevel);
+
+    // then: Index 0 and 1 are skipped, so even though they are 0, the result should be true
+    EXPECT_TRUE(result);
+}
+
+TEST(IsTdxTcbHigherOrEqualTest, MaxValues) {
+    // given: Quote with maximum uint8_t values
+    TestQuote quote;
+    quote.setHeaderVersion(QUOTE_VERSION_3);
+    quote.setTdReport10TeeTcbSvn({255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+
+    std::vector<TcbComponent> tdx_components(16, TcbComponent(255));
+
+    TcbLevel tcbLevel("", {}, tdx_components, 0, "UpToDate", 0, {});
+
+    // when
+    bool result = isTdxTcbHigherOrEqual(quote, tcbLevel);
+
+    // then
+    EXPECT_TRUE(result);
+}
+
+// Unit tests for isTcbComponentSvnHigherOrEqual
+TEST(IsTcbComponentSvnHigherOrEqualTest, AllComponentsEqual) {
+    // given: PCK certificate and TcbLevel with all components equal
+    MockPckCertificate pckCert;
+    Tcb tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+            {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5}, 0);
+
+    std::vector<TcbComponent> sgx_components(16, TcbComponent(5));
+
+    TcbLevel tcbLevel("", sgx_components, {}, 0, "UpToDate", 0, {});
+
+    EXPECT_CALL(pckCert, getTcb()).WillRepeatedly(ReturnRef(tcb));
+
+    // when
+    bool result = isTcbComponentSvnHigherOrEqual(pckCert, tcbLevel);
+
+    // then
+    EXPECT_TRUE(result);
+}
+
+TEST(IsTcbComponentSvnHigherOrEqualTest, AllComponentsHigher) {
+    // given: PCK certificate with all components higher than TcbLevel
+    MockPckCertificate pckCert;
+    Tcb tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+            {10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}, 0);
+
+    std::vector<TcbComponent> sgx_components(16, TcbComponent(5));
+
+    TcbLevel tcbLevel("", sgx_components, {}, 0, "UpToDate", 0, {});
+
+    EXPECT_CALL(pckCert, getTcb()).WillRepeatedly(ReturnRef(tcb));
+
+    // when
+    bool result = isTcbComponentSvnHigherOrEqual(pckCert, tcbLevel);
+
+    // then
+    EXPECT_TRUE(result);
+}
+
+TEST(IsTcbComponentSvnHigherOrEqualTest, OneComponentLower) {
+    // given: PCK certificate with middle component (index 8) lower than TcbLevel
+    MockPckCertificate pckCert;
+    Tcb tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+            {10, 10, 10, 10, 10, 10, 10, 10, 2, 10, 10, 10, 10, 10, 10, 10}, 0);
+
+    std::vector<TcbComponent> sgx_components(16, TcbComponent(5));
+
+    TcbLevel tcbLevel("", sgx_components, {}, 0, "UpToDate", 0, {});
+
+    EXPECT_CALL(pckCert, getTcb()).WillRepeatedly(ReturnRef(tcb));
+
+    // when
+    bool result = isTcbComponentSvnHigherOrEqual(pckCert, tcbLevel);
+
+    // then: Should return false because one component is lower
+    EXPECT_FALSE(result);
+}
+
+TEST(IsTcbComponentSvnHigherOrEqualTest, MixedHigherAndEqual) {
+    // given: PCK certificate with some components higher and some equal
+    MockPckCertificate pckCert;
+    Tcb tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+            {10, 5, 15, 5, 10, 5, 20, 5, 10, 5, 10, 5, 10, 5, 10, 5}, 0);
+
+    std::vector<TcbComponent> sgx_components(16, TcbComponent(5));
+
+    TcbLevel tcbLevel("", sgx_components, {}, 0, "UpToDate", 0, {});
+
+    EXPECT_CALL(pckCert, getTcb()).WillRepeatedly(ReturnRef(tcb));
+
+    // when
+    bool result = isTcbComponentSvnHigherOrEqual(pckCert, tcbLevel);
+
+    // then: Should return true because all are >= (none are lower)
+    EXPECT_TRUE(result);
+}
+
+TEST(IsTcbComponentSvnHigherOrEqualTest, AllComponentsMaxValue) {
+    // given: PCK certificate and TcbLevel with all components at max (255)
+    MockPckCertificate pckCert;
+    Tcb tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+            {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}, 0);
+
+    std::vector<TcbComponent> sgx_components(16, TcbComponent(255));
+
+    TcbLevel tcbLevel("", sgx_components, {}, 0, "UpToDate", 0, {});
+
+    EXPECT_CALL(pckCert, getTcb()).WillRepeatedly(ReturnRef(tcb));
+
+    // when
+    bool result = isTcbComponentSvnHigherOrEqual(pckCert, tcbLevel);
+
+    // then: Should return true
+    EXPECT_TRUE(result);
+}
+
+// Unit tests for getMatchingTcbLevel
+TEST(GetMatchingTcbLevelTest, SGX_MatchFirstTcbLevel) {
+    // given: SGX quote with PCK cert matching first TCB level
+    MockTcbInfo tcb_info;
+    MockPckCertificate pck_cert;
+    TestQuote quote;
+
+    // Setup TCB info for SGX (version 2)
+    EXPECT_CALL(tcb_info, getVersion()).WillRepeatedly(Return(2));
+    EXPECT_CALL(tcb_info, getId()).WillRepeatedly(Return("SGX"));
+
+    // Setup PCK cert TCB
+    Tcb cert_tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}, 5);
+    EXPECT_CALL(pck_cert, getTcb()).WillRepeatedly(ReturnRef(cert_tcb));
+
+    // Setup TCB levels - first level should match
+    std::vector<TcbComponent> sgx_components(16, TcbComponent(5));
+
+    TcbLevel level1("", sgx_components, {}, 3, "UpToDate", 0, {});
+    TcbLevel level2("", sgx_components, {}, 1, "OutOfDate", 0, {});
+
+    std::set<TcbLevel, std::greater<TcbLevel>> tcb_levels;
+    tcb_levels.insert(level1);
+    tcb_levels.insert(level2);
+
+    EXPECT_CALL(tcb_info, getTcbLevels()).WillRepeatedly(ReturnRef(tcb_levels));
+
+    // when
+    const TcbLevel& result = getMatchingTcbLevel(&tcb_info, pck_cert, quote);
+
+    // then: Should return the first matching level
+    EXPECT_EQ(result.getPceSvn(), 3);
+    EXPECT_EQ(result.getStatus(), "UpToDate");
+}
+
+TEST(GetMatchingTcbLevelTest, SGX_MatchSecondTcbLevel) {
+    // given: SGX quote with PCK cert matching second TCB level (not first)
+    MockTcbInfo tcb_info;
+    MockPckCertificate pck_cert;
+    TestQuote quote;
+
+    EXPECT_CALL(tcb_info, getVersion()).WillRepeatedly(Return(2));
+    EXPECT_CALL(tcb_info, getId()).WillRepeatedly(Return("SGX"));
+
+    // PCK cert has lower TCB components - will match second level
+    Tcb cert_tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3}, 2);
+    EXPECT_CALL(pck_cert, getTcb()).WillRepeatedly(ReturnRef(cert_tcb));
+
+    // First level requires higher TCB
+    std::vector<TcbComponent> sgx_components_1(16, TcbComponent(5));
+    TcbLevel level1("", sgx_components_1, {}, 3, "UpToDate", 0, {});
+
+    // Second level has lower requirements
+    std::vector<TcbComponent> sgx_components_2(16, TcbComponent(2));
+    TcbLevel level2("", sgx_components_2, {}, 1, "OutOfDate", 0, {});
+
+    std::set<TcbLevel, std::greater<TcbLevel>> tcb_levels;
+    tcb_levels.insert(level1);
+    tcb_levels.insert(level2);
+
+    EXPECT_CALL(tcb_info, getTcbLevels()).WillRepeatedly(ReturnRef(tcb_levels));
+
+    // when
+    const TcbLevel& result = getMatchingTcbLevel(&tcb_info, pck_cert, quote);
+
+    // then: Should return the second level
+    EXPECT_EQ(result.getPceSvn(), 1);
+    EXPECT_EQ(result.getStatus(), "OutOfDate");
+}
+
+TEST(GetMatchingTcbLevelTest, SGX_NoMatchThrowsException) {
+    // given: SGX quote with PCK cert that doesn't match any TCB level
+    MockTcbInfo tcb_info;
+    MockPckCertificate pck_cert;
+    TestQuote quote;
+
+    EXPECT_CALL(tcb_info, getVersion()).WillRepeatedly(Return(2));
+    EXPECT_CALL(tcb_info, getId()).WillRepeatedly(Return("SGX"));
+
+    // PCK cert has very low TCB that won't match any level
+    Tcb cert_tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, 0);
+    EXPECT_CALL(pck_cert, getTcb()).WillRepeatedly(ReturnRef(cert_tcb));
+
+    // All levels require higher TCB
+    std::vector<TcbComponent> sgx_components(16, TcbComponent(5));
+    TcbLevel level1("", sgx_components, {}, 3, "UpToDate", 0, {});
+
+    std::set<TcbLevel, std::greater<TcbLevel>> tcb_levels;
+    tcb_levels.insert(level1);
+
+    EXPECT_CALL(tcb_info, getTcbLevels()).WillRepeatedly(ReturnRef(tcb_levels));
+
+    // when/then: Should throw exception
+    EXPECT_THROW(getMatchingTcbLevel(&tcb_info, pck_cert, quote), quote3_error_t);
+}
+
+TEST(GetMatchingTcbLevelTest, SGX_PceSvnTooLow) {
+    // given: SGX quote with PCK cert that has matching TCB components but PCE SVN too low
+    MockTcbInfo tcb_info;
+    MockPckCertificate pck_cert;
+    TestQuote quote;
+
+    EXPECT_CALL(tcb_info, getVersion()).WillRepeatedly(Return(2));
+    EXPECT_CALL(tcb_info, getId()).WillRepeatedly(Return("SGX"));
+
+    // PCK cert has matching TCB components but low PCE SVN
+    Tcb cert_tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}, 2);
+    EXPECT_CALL(pck_cert, getTcb()).WillRepeatedly(ReturnRef(cert_tcb));
+
+    // Level requires higher PCE SVN
+    std::vector<TcbComponent> sgx_components(16, TcbComponent(5));
+    TcbLevel level1("", sgx_components, {}, 5, "UpToDate", 0, {});
+
+    std::set<TcbLevel, std::greater<TcbLevel>> tcb_levels;
+    tcb_levels.insert(level1);
+
+    EXPECT_CALL(tcb_info, getTcbLevels()).WillRepeatedly(ReturnRef(tcb_levels));
+
+    // when/then: Should throw exception because PCE SVN is too low
+    EXPECT_THROW(getMatchingTcbLevel(&tcb_info, pck_cert, quote), quote3_error_t);
+}
+
+TEST(GetMatchingTcbLevelTest, TDX_Version3_TdxTcbTooLow) {
+    // given: TDX quote (version 3) with TDX TCB too low
+    MockTcbInfo tcb_info;
+    MockPckCertificate pck_cert;
+    TestQuote quote;
+
+    // Setup for TDX
+    quote.setHeaderVersion(QUOTE_VERSION_4);
+    quote.setTeeType(TEE_TYPE_TDX);
+    // TDX TCB is too low (3 < 5)
+    quote.setTdReport10TeeTcbSvn({0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3});
+
+    EXPECT_CALL(tcb_info, getVersion()).WillRepeatedly(Return(3));
+    EXPECT_CALL(tcb_info, getId()).WillRepeatedly(Return(TcbInfo::TDX_ID));
+
+    // PCK cert TCB is fine
+    Tcb cert_tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}, 5);
+    EXPECT_CALL(pck_cert, getTcb()).WillRepeatedly(ReturnRef(cert_tcb));
+
+    // TDX components require higher values
+    std::vector<TcbComponent> sgx_components(16, TcbComponent(5));
+    std::vector<TcbComponent> tdx_components(16, TcbComponent(5));
+    TcbLevel level1(TcbInfo::TDX_ID, sgx_components, tdx_components, 3, "UpToDate", 0, {});
+
+    std::set<TcbLevel, std::greater<TcbLevel>> tcb_levels;
+    tcb_levels.insert(level1);
+
+    EXPECT_CALL(tcb_info, getTcbLevels()).WillRepeatedly(ReturnRef(tcb_levels));
+
+    // when/then: Should throw because TDX TCB is too low
+    EXPECT_THROW(getMatchingTcbLevel(&tcb_info, pck_cert, quote), quote3_error_t);
+}
+
+TEST(GetMatchingTcbLevelTest, TDX_Version3_TdxTcbSufficient) {
+    // given: TDX quote (version 3) with sufficient TDX TCB
+    MockTcbInfo tcb_info;
+    MockPckCertificate pck_cert;
+    TestQuote quote;
+
+    // Setup for TDX
+    quote.setHeaderVersion(QUOTE_VERSION_4);
+    quote.setTeeType(TEE_TYPE_TDX);
+
+    // TDX TCB is sufficient (5 >= 5)
+    quote.setTdReport10TeeTcbSvn({5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5});
+    EXPECT_CALL(tcb_info, getVersion()).WillRepeatedly(Return(3));
+    EXPECT_CALL(tcb_info, getId()).WillRepeatedly(Return(TcbInfo::TDX_ID));
+
+   // PCK cert TCB is fine
+    Tcb cert_tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                 {10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}, 5);
+    EXPECT_CALL(pck_cert, getTcb()).WillRepeatedly(ReturnRef(cert_tcb));
+
+    // TDX components require value 5, which the quote meets
+    std::vector<TcbComponent> sgx_components(16, TcbComponent(5));
+    std::vector<TcbComponent> tdx_components(16, TcbComponent(5));
+    TcbLevel level1(TcbInfo::TDX_ID, sgx_components, tdx_components, 3, "UpToDate", 0, {});
+    std::set<TcbLevel, std::greater<TcbLevel>> tcb_levels;
+    tcb_levels.insert(level1);
+
+    EXPECT_CALL(tcb_info, getTcbLevels()).WillRepeatedly(ReturnRef(tcb_levels));
+
+    // when/then: Should not throw because TDX TCB is sufficient
+    EXPECT_NO_THROW(getMatchingTcbLevel(&tcb_info, pck_cert, quote));
+}
+
+TEST(GetMatchingTcbLevelTest, SGX_TeeType_WithTdxId_SkipsTdxCheck) {
+    // given: SGX tee type (not TDX) with TDX ID should skip TDX check
+    MockTcbInfo tcb_info;
+    MockPckCertificate pck_cert;
+    TestQuote quote;
+
+    quote.setHeaderVersion(QUOTE_VERSION_4);
+    quote.setTeeType(TEE_TYPE_SGX); // SGX type
+
+    EXPECT_CALL(tcb_info, getVersion()).WillRepeatedly(Return(3));
+    EXPECT_CALL(tcb_info, getId()).WillRepeatedly(Return(TcbInfo::TDX_ID)); // TDX ID but SGX tee type
+
+    // PCK cert TCB
+    Tcb cert_tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}, 5);
+    EXPECT_CALL(pck_cert, getTcb()).WillRepeatedly(ReturnRef(cert_tcb));
+
+    std::vector<TcbComponent> sgx_components(16, TcbComponent(5));
+    std::vector<TcbComponent> tdx_components(16, TcbComponent(5));
+    TcbLevel level1(TcbInfo::TDX_ID, sgx_components, tdx_components, 3, "UpToDate", 0, {});
+
+    std::set<TcbLevel, std::greater<TcbLevel>> tcb_levels;
+    tcb_levels.insert(level1);
+
+    EXPECT_CALL(tcb_info, getTcbLevels()).WillRepeatedly(ReturnRef(tcb_levels));
+
+    // when
+    const TcbLevel& result = getMatchingTcbLevel(&tcb_info, pck_cert, quote);
+
+    // then: Should match without TDX check (because teeType is SGX)
+    EXPECT_EQ(result.getPceSvn(), 3);
+}
+
+TEST(GetMatchingTcbLevelTest, MultipleLevels_ReturnsFirstMatch) {
+    // given: Multiple TCB levels, should return first matching one
+    MockTcbInfo tcb_info;
+    MockPckCertificate pck_cert;
+    TestQuote quote;
+
+    EXPECT_CALL(tcb_info, getVersion()).WillRepeatedly(Return(2));
+    EXPECT_CALL(tcb_info, getId()).WillRepeatedly(Return("SGX"));
+
+    // PCK cert with high TCB - matches both levels
+    Tcb cert_tcb({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}, 10);
+    EXPECT_CALL(pck_cert, getTcb()).WillRepeatedly(ReturnRef(cert_tcb));
+
+    // Create multiple levels - both would match
+    std::vector<TcbComponent> sgx_components_1(16, TcbComponent(8));
+    std::vector<TcbComponent> sgx_components_2(16, TcbComponent(3));
+    TcbLevel level1("", sgx_components_1, {}, 9, "UpToDate", 0, {});
+    TcbLevel level2("", sgx_components_2, {}, 2, "OutOfDate", 0, {});
+
+    std::set<TcbLevel, std::greater<TcbLevel>> tcb_levels;
+    tcb_levels.insert(level1);
+    tcb_levels.insert(level2);
+
+    EXPECT_CALL(tcb_info, getTcbLevels()).WillRepeatedly(ReturnRef(tcb_levels));
+
+    // when
+    const TcbLevel& result = getMatchingTcbLevel(&tcb_info, pck_cert, quote);
+
+    // then: Should return first matching level (highest PCE SVN)
+    EXPECT_EQ(result.getPceSvn(), 9);
 }

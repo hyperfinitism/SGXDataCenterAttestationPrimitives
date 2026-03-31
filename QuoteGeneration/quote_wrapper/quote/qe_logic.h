@@ -40,8 +40,8 @@
 #define _QE3_LOGIC_H_
 
 #include "sgx_urts.h"
-#include "sgx_quote_3.h"
-#include "sgx_ql_quote.h"
+#include <sgx_quote_3.h>
+#include <sgx_ql_quote.h>
 #include <time.h>
 #include <string.h>
 

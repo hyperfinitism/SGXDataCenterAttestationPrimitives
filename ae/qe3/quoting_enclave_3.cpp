@@ -42,7 +42,7 @@
 #include <string.h>
 
 #include "sgx_quote.h"
-#include "sgx_quote_3.h"
+#include <sgx_quote_3.h>
 #include "sgx_tseal.h"
 #include "sgx_utils.h"
 #include "qe3_t.c"
@@ -51,7 +51,7 @@
 
 #include "qe3.h"
 #include "user_types.h"
-#include "sgx_pce.h"
+#include <sgx_pce.h>
 #include "sgx_lfence.h"
 
   //Compile switches for debug and for currently unsupported features.

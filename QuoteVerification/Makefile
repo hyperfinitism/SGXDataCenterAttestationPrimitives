@@ -38,19 +38,19 @@ QVE_DIR := ../ae/QvE
 all: $(QVE_DIR) dcap_quoteverify
 
 $(QVE_DIR):
-	$(MAKE) -C $(QVE_DIR)
+	+$(MAKE) -C $(QVE_DIR)
 
 dcap_quoteverify: $(QVE_DIR)
-	$(MAKE) -C dcap_quoteverify/linux
+	+$(MAKE) -C dcap_quoteverify/linux
 
 tee_appraisal_tool:
-	$(MAKE) -C appraisal/tee_appraisal_tool
+	+$(MAKE) -C appraisal/tee_appraisal_tool
 
 clean:
-	$(MAKE) -C dcap_quoteverify/linux clean
-	$(MAKE) -C $(QVE_DIR) clean
-	$(MAKE) -C appraisal/tee_appraisal_tool clean
+	+$(MAKE) -C dcap_quoteverify/linux clean
+	+$(MAKE) -C $(QVE_DIR) clean
+	+$(MAKE) -C appraisal/tee_appraisal_tool clean
 
 rebuild:
-	$(MAKE) -f $(CUR_MKFILE) clean
-	$(MAKE) -f $(CUR_MKFILE) all
+	+$(MAKE) -f $(CUR_MKFILE) clean
+	+$(MAKE) -f $(CUR_MKFILE) all

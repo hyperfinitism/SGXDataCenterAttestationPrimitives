@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "sgx_dcap_qal.h"
+#include <sgx_dcap_qal.h>
 #include <stdlib.h>
 #include <string>
 #include <sstream>

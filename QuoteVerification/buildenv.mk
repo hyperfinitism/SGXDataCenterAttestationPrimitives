@@ -27,8 +27,8 @@ include $(CUR_DIR)/../QuoteGeneration/buildenv.mk
 MODE					?= HW
 DEBUG					?= 0
 DCAP_QG_DIR				:= $(ROOT_DIR)
-PREBUILD_PATH	        := $(DCAP_QG_DIR)/../prebuilt
-DCAP_QV_DIR				:= $(DCAP_QG_DIR)/../QuoteVerification
+PREBUILD_PATH	        := $(abspath $(DCAP_QG_DIR)/../prebuilt)
+DCAP_QV_DIR				:= $(abspath $(DCAP_QG_DIR)/../QuoteVerification)
 QVL_SRC_PATH 			?= $(DCAP_QV_DIR)/QVL/Src
 SGXSSL_PACKAGE_PATH 	?= $(DCAP_QV_DIR)/sgxssl/Linux/package
 PREBUILD_OPENSSL_PATH	?= $(PREBUILD_PATH)/openssl
@@ -43,7 +43,7 @@ QVL_PARSER_PATH := $(QVL_SRC_PATH)/AttestationParsers
 QVL_COMMON_PATH := $(QVL_SRC_PATH)/AttestationCommons
 
 ifdef SERVTD_ATTEST
-COMMON_INCLUDE := -I$(ROOT_DIR)/../../../common/inc/ -I$(ROOT_DIR)/../../../common/inc/tlibc -I$(ROOT_DIR)/../../../sdk/tlibcxx/include -isystem$(SGXSSL_PACKAGE_PATH)/include
+COMMON_INCLUDE := -I$(SERVTD_ATTEST_STD_INC_PATH) -I$(SERVTD_ATTEST_STD_INC_PATH)/tlibc -I$(SERVTD_ATTEST_LIBCXX_INC_PATH) -isystem$(SGXSSL_PACKAGE_PATH)/include
 else
 COMMON_INCLUDE := -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/libcxx -isystem$(SGXSSL_PACKAGE_PATH)/include
 endif

@@ -9,7 +9,7 @@
 #include "qae_u.h"
 #include "sgx_error.h"
 #include "qae_wrapper.h"
-#include "sgx_dcap_qal.h"
+#include <sgx_dcap_qal.h>
 #include "se_trace.h"
 #include "metadata.h"
 #include "sgx_urts_wrapper.h"

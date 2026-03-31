@@ -83,7 +83,7 @@ install_lib: $(Tdx_Attest_Name) | $(BUILD_DIR)
 
 ######## Tdx_Attest Objects ########
 $(Tdx_Attest_Name): $(Tdx_Attest_C_Objects)
-	make -C ../../qgs_msg_lib/linux CXXFLAGS="$(CXXFLAGS)"
+	+$(MAKE) -C ../../qgs_msg_lib/linux CXXFLAGS="$(CXXFLAGS)"
 	$(CC) $^ -shared -Wl,-soname=$@.$(SGX_MAJOR_VER) $(QGS_MSG_LFLAGS) $(LDUFLAGS) -o $@
 	@echo "LINK =>  $@"
 
@@ -99,6 +99,6 @@ $(BUILD_DIR):
 .PHONY: clean
 
 clean:
-	make -C ../../qgs_msg_lib/linux clean
+	+$(MAKE) -C ../../qgs_msg_lib/linux clean
 	@$(RM) $(Tdx_Attest_Name) $(Tdx_Attest_C_Objects) $(Tdx_Attest_C_Depends) ./qgs test_app
 	@$(RM) $(addprefix $(BUILD_DIR)/,$(Tdx_Attest_Name) $(Tdx_Attest_Name_Full) $(Tdx_Attest_Name_Major))

@@ -39,7 +39,7 @@
 #ifndef _SGX_QL_ECDSA_QUOTE_H_
 #define _SGX_QL_ECDSA_QUOTE_H_
 
-#include "sgx_ql_quote.h"
+#include <sgx_ql_quote.h>
 
 /**
     Class definition of the reference ECDSA-P256 quoting code which implements the quoting interface, IQuote.

@@ -34,7 +34,7 @@
  * Description: DCAP PCS communication APIs. Dynamically load and call quote provider APIs.
  */
 
-#include "sgx_qve_header.h"
+#include <sgx_qve_header.h>
 #include "sgx_dcap_pcs_com.h"
 #include <stdlib.h>
 #include "se_trace.h"
