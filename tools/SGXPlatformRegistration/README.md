@@ -20,10 +20,6 @@ License
 -------
 See [license.txt](license.txt) for details.
 
-Documentation
--------------
-See [config/README](config/README) for details.
-
 Build the Intel(R) SGX Multi-package Registration Agent and Libraries
 ------------------------
 ### Prerequisites
