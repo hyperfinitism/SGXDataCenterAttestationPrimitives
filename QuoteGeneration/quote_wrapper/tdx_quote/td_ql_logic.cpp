@@ -1989,9 +1989,7 @@ tee_att_error_t tee_att_config_t::ecdsa_get_quote(const sgx_report2_t *p_app_rep
     SE_TRACE(SE_TRACE_NOTICE, "Get quote success\n");
 
     CLEANUP:
-    if(NULL != p_certification_data) {
-        free(p_certification_data);
-    }
+    free(p_certification_data);
 
     if(0 != blob_mutex_rc ) {
         blob_mutex_rc = se_mutex_unlock(&m_ecdsa_blob_mutex);

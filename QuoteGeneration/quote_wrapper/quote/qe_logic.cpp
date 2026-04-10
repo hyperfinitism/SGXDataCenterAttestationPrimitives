@@ -2292,9 +2292,7 @@ quote3_error_t ECDSA256Quote::ecdsa_get_quote(const sgx_report_t *p_app_report,
     SE_TRACE(SE_TRACE_NOTICE, "Get quote success\n");
 
     CLEANUP:
-    if(NULL != p_certification_data) {
-        free(p_certification_data);
-    }
+    free(p_certification_data);
 
     if(0 != blob_mutex_rc ) {
         blob_mutex_rc = se_mutex_unlock(&g_ql_global_data.m_ecdsa_blob_mutex);

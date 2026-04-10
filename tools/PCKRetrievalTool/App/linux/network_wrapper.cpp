@@ -343,9 +343,7 @@ network_post_error_t network_https_post(const uint8_t* raw_data, const uint64_t 
     if (curl) {
         curl_easy_cleanup(curl);
     }
-    if (res_body.base) {
-        free(res_body.base);
-    }
+    free(res_body.base);
     return ret;
 }
 

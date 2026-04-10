@@ -221,9 +221,7 @@ void sgx_qcnl_free_tcbinfo(uint8_t *p_tcbinfo) {
  * This API frees the p_tcbinfo buffer allocated by tdx_qcnl_get_tcbinfo
  */
 void tdx_qcnl_free_tcbinfo(uint8_t *p_tcbinfo) {
-    if (p_tcbinfo) {
-        free(p_tcbinfo);
-    }
+    free(p_tcbinfo);
 }
 
 /**

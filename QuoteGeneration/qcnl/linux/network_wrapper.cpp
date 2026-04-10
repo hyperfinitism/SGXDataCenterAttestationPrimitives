@@ -391,12 +391,8 @@ cleanup:
         f_slist_free_all(headers);
     }
     if (ret != SGX_QCNL_SUCCESS) {
-        if (res_body.base) {
-            free(res_body.base);
-        }
-        if (res_header.base) {
-            free(res_header.base);
-        }
+        free(res_body.base);
+        free(res_header.base);
     }
 
     return ret;

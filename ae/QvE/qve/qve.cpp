@@ -551,9 +551,7 @@ quote3_error_t get_fmspc_ca_from_quote(const uint8_t* p_quote, uint32_t quote_si
 
     //free allocated memory
     //
-    if (p_pck_cert_chain != NULL) {
-        free(p_pck_cert_chain);
-    }
+    free(p_pck_cert_chain);
 
     return ret;
 }
@@ -2987,25 +2985,19 @@ quote3_error_t  tee_qve_verify_quote_qvt(
             break;
         //Will not generate JWT when critical error occurred
         default:
-            if(supp_data.p_data != NULL){
-                free(supp_data.p_data);
-            }
+            free(supp_data.p_data);
             return TEE_ERROR_UNEXPECTED;
         }
     }
     else {
-        if(supp_data.p_data != NULL){
-            free(supp_data.p_data);
-        }
+        free(supp_data.p_data);
         return dcap_ret;
     }
 
     unsigned char rand_nonce[REQUEST_ID_LEN] = {0};
     if(!RAND_bytes(rand_nonce, REQUEST_ID_LEN))
     {
-        if(supp_data.p_data != NULL){
-            free(supp_data.p_data);
-        }
+        free(supp_data.p_data);
         return TEE_ERROR_UNEXPECTED;
     }
 
@@ -3019,9 +3011,7 @@ quote3_error_t  tee_qve_verify_quote_qvt(
     else if (*p_type == TDX_QUOTE_TYPE)
         tee_type = TDX_EVIDENCE;
     else{
-        if(supp_data.p_data != NULL){
-            free(supp_data.p_data);
-        }
+        free(supp_data.p_data);
         //quote type is not supported
         return TEE_ERROR_INVALID_PARAMETER;
     }
@@ -3094,12 +3084,8 @@ quote3_error_t  tee_qve_verify_quote_qvt(
     }
     catch (...)
     {
-        if(supp_data.p_data != NULL){
-            free(supp_data.p_data);
-        }
-        if(tmp_result_token != NULL){
-            free(tmp_result_token);
-        }
+        free(supp_data.p_data);
+        free(tmp_result_token);
         return TEE_ERROR_UNEXPECTED;
     }
 
@@ -3127,25 +3113,17 @@ quote3_error_t  tee_qve_verify_quote_qvt(
             memcpy(*p_verification_result_token, tmp_result_token, *p_verification_result_token_buffer_size);
         }
         else{
-            if(tmp_result_token != NULL){
-                free(tmp_result_token);
-            }
-            if(supp_data.p_data != NULL){
-                free(supp_data.p_data);
-            }
+            free(tmp_result_token);
+            free(supp_data.p_data);
             return TEE_ERROR_OUT_OF_MEMORY;
         }
     }
-    if(tmp_result_token != NULL){
-        free(tmp_result_token);
-    }
+    free(tmp_result_token);
 #else
     *p_verification_result_token = tmp_result_token;
 #endif //SGX_TRUSTED
 
-    if(supp_data.p_data != NULL){
-        free(supp_data.p_data);
-    }
+    free(supp_data.p_data);
     return dcap_ret;
 }
 
