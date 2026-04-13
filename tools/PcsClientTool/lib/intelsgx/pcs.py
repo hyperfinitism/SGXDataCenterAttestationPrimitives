@@ -1,9 +1,8 @@
-import urllib
 import urllib3
 import requests
 import json
 import binascii
-from urllib import parse
+from urllib import parse, request
 
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature
@@ -73,9 +72,9 @@ class PCS:
 
     def _geturl(self, func, type='sgx'):
         if type == 'sgx':
-            return urllib.parse.urljoin(self.BaseUrl, func)
+            return parse.urljoin(self.BaseUrl, func)
         elif type == 'tdx':
-            return urllib.parse.urljoin(self.BaseUrl.replace('/sgx/', '/tdx/'), func)
+            return parse.urljoin(self.BaseUrl.replace('/sgx/', '/tdx/'), func)
         else:
             raise Exception('Internal error!')
 
@@ -777,7 +776,7 @@ class PCS:
             session = PACSession()
             r = session.get(url)
         else:
-            r = requests.get(url, proxies=urllib.request.getproxies())
+            r = requests.get(url, proxies=request.getproxies())
 
         if self.ApiVersion<3:
             return str(r.content, 'utf-8')

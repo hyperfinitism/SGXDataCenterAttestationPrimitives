@@ -210,14 +210,14 @@ class CollateralFetcher:
 
     def _fetch_pck_crl_and_root_ca_crl(self):
         processorCrl = self.pcsclient.get_pck_crl('processor', 'ascii')
-        if processorCrl == None:
+        if processorCrl is None:
             print("Failed to get processor PCK CRL.")
             return False
         self.output_json["collaterals"]["pckcacrl"]["processorCrl"] = processorCrl[0]
 
         if self.ApiVersion >= 3:
             platformCrl = self.pcsclient.get_pck_crl('platform', 'ascii')
-            if platformCrl == None:
+            if platformCrl is None:
                 print("Failed to get platform PCK CRL.")
                 return False
             self.output_json["collaterals"]["pckcacrl"]["platformCrl"] = platformCrl[0]
@@ -250,7 +250,7 @@ class CollateralFetcher:
 
             # get pckcerts from Intel PCS, return value is [certs, certs_not_available, chain, fmspc]
             pckcerts = self.pcsclient.get_pck_certs(enc_ppid, pce_id, platform_manifest, 'ascii')
-            if pckcerts == None:
+            if pckcerts is None:
                 print("Failed to get PCK certs for platform enc_ppid:%s, pce_id:%s" %(enc_ppid,pce_id))
                 return False
 
