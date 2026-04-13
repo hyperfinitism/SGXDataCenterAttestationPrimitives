@@ -167,7 +167,7 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
                     QGS_LOG_INFO("process raw request [%zu] bytes!.\n", bytes_transferred);
                     m_readbuf.resize(bytes_transferred);
                     handle_raw_request();
-                } else {
+                } else if (bytes_transferred < raw_report_size) {
                     QGS_LOG_INFO("wait for [%zu] bytes!.\n", raw_report_size - bytes_transferred);
                     asio::async_read(m_socket, asio::buffer(m_readbuf),
                                      asio::transfer_exactly(raw_report_size - bytes_transferred),
@@ -175,6 +175,10 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
                                                  shared_from_this(),
                                                  asio::placeholders::error,
                                                  asio::placeholders::bytes_transferred));
+                } else {
+                    QGS_LOG_INFO("invalid request, close connection!.\n");
+                    m_timer.cancel();
+                    stop();
                 }
                 return;
             } else {
