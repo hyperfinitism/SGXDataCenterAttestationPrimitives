@@ -268,4 +268,21 @@ public class Supplemental {
 	public int getTeeType() {
 		return teeType;
 	}
+
+	@Override
+	public String toString() {
+		return "Supplemental [major_version=" + major_version +
+			", minor_version=" + minor_version +
+			", earliestIssueDate=" + earliestIssueDate +
+			", latestIssueDate=" + latestIssueDate +
+			", earliestExpirationDate=" + earliestExpirationDate +
+			", tcbLevelDateTag=" + tcbLevelDateTag +
+			", pckCrlNum=" + pckCrlNum +
+			", rootCaCrlNum=" + rootCaCrlNum +
+			", tcbEvalRefNum=" + tcbEvalRefNum +
+			", teeType=" + teeType +
+			", pceId=" + pceId +
+			", saList='" + saList + "'" +
+			"]";
+	}
 }

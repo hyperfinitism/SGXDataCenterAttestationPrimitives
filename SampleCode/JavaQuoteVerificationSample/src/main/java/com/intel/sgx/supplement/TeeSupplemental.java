@@ -49,4 +49,10 @@ public class TeeSupplemental {
 	public Supplemental getSupplemental() {
 		return supplemental;
 	}
+
+	@Override
+	public String toString() {
+		return "TeeSupplemental [major_version=" + major_version +
+			", supplemental=" + supplemental + "]";
+	}
 }
