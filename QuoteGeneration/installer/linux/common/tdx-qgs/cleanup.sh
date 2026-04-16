@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2026 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -40,18 +40,12 @@ fi
 
 # Kill qgsd service
 if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
     systemctl stop qgsd
     systemctl disable qgsd 2> /dev/null
-    rm -rf /etc/systemd/system/qgsd.service.d
-    systemctl daemon-reload
 elif [ -d /etc/init/ ]; then
     /sbin/initctl reload-configuration
     /sbin/initctl stop qgsd
-fi
-
-# Clean up runtime directory if it exists and is empty
-if [ -d /run/tdx-qgs ]; then
-    rmdir /run/tdx-qgs 2>/dev/null || true
 fi
 
 # Remove qgsd user and group
