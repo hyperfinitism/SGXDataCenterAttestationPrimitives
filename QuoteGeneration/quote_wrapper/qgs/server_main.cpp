@@ -92,7 +92,7 @@ int main(int argc, const char* argv[])
     unsigned long int num_threads = 0;
     char *endptr = NULL;
     if (argc > 4) {
-        cout << "Usage: " << argv[0] << " [--no-daemon] [-p=port_number] [-n=number_threads] [--verbose] [--debug]"
+        cout << "Usage: " << argv[0] << "[--no-daemon] [-p=port_number] [-n=number_threads]"
              << endl;
         exit(1);
     }
@@ -160,12 +160,6 @@ int main(int argc, const char* argv[])
                  << endl;
             no_daemon = true;
             continue;
-        } else if (strcmp(argv[i], "--debug") == 0) {
-            qgs_verbose = qgs_debug = true;
-            continue;
-        } else if (strcmp(argv[i], "--verbose") == 0) {
-            qgs_verbose = true;
-            continue;
         } else if (strncmp(argv[i], "-p=", 3 ) == 0) {
             if (strspn(argv[i] + 3, "0123456789") != strlen(argv[i] + 3)) {
                 cout << "Please input valid port number" << endl;
@@ -194,7 +188,7 @@ int main(int argc, const char* argv[])
             cout << "thread number [" << num_threads << "] found in cmdline" << endl;
             continue;
         } else {
-            cout << "Usage: " << argv[0] << " [--no-daemon] [-p=port_number] [-n=number_threads] [--verbose] [--debug]"
+            cout << "Usage: " << argv[0] << "[--no-daemon] [-p=port_number] [-n=number_threads]"
                 << endl;
             exit(1);
         }

@@ -40,8 +40,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif/*__cplusplus*/
-    extern bool qgs_debug;
-    extern bool qgs_verbose;
     void qgs_log_init(void);
     void qgs_log_init_ex(bool nosyslog);
     void qgs_log_fini(void);
