@@ -1,5 +1,5 @@
 #
-# Copyright(c) 2011-2025 Intel Corporation
+# Copyright(c) 2011-2026 Intel Corporation
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -32,10 +32,11 @@ echo "%{_install_path}" > %{_specdir}/list-%{name}
 find %{?buildroot} | sort | \
 awk '$0 !~ last "/" {print last} {last=$0} END {print last}' | \
 sed -e "s#^%{?buildroot}##" | \
-grep -v "^%{_install_path}" >> %{_specdir}/list-%{name} || :
-sed -i 's#^/etc/qgsd.conf#%config &#' %{_specdir}/list-%{name}
+grep -v "^%{_install_path}" | \
+grep -v "^/etc/qgs\.conf" >> %{_specdir}/list-%{name} || :
 
 %files -f %{_specdir}/list-%{name}
+%config(noreplace) /etc/qgs.conf
 
 %posttrans
 if [ -x %{_install_path}/startup.sh ]; then %{_install_path}/startup.sh; fi
