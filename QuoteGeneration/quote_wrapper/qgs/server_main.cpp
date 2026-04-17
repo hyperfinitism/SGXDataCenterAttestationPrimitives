@@ -10,6 +10,13 @@
 #include <signal.h>
 #include <string.h>
 #include <linux/vm_sockets.h>
+#include <sys/stat.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include <cerrno>
+#include <cstring>
+#include <pwd.h>
+#include <grp.h>
 
 #define QGS_CONFIG_FILE "/etc/qgs.conf"
 #define QGS_UNIX_SOCKET_FILE "/var/run/tdx-qgs/qgs.socket"
@@ -48,7 +55,54 @@ void signal_handler(int sig)
     }
 }
 
-bool createDirectoryRecursive(const std::string& path) {
+bool do_chown(const char *file_path,
+              const char *user_name,
+              const char *group_name)
+{
+    uid_t          uid;
+    gid_t          gid;
+    struct passwd *pwd;
+    struct group  *grp;
+
+    // POSIX allows getpwnam to return NULL either for "not found"
+    // (errno unchanged) or for a system error (errno set).
+    // Zero errno first so we can tell the two cases apart in the
+    // error message below.
+    errno = 0;
+    pwd = getpwnam(user_name);
+    if (pwd == NULL) {
+        QGS_LOG_ERROR("Failed to get uid for user '%s': %s\n", user_name,
+                      errno ? strerror(errno) : "user not found");
+        return false;
+    }
+    uid = pwd->pw_uid;
+
+    errno = 0;
+    grp = getgrnam(group_name);
+    if (grp == NULL) {
+        QGS_LOG_ERROR("Failed to get gid for group '%s': %s\n", group_name,
+                      errno ? strerror(errno) : "group not found");
+        return false;
+    }
+    gid = grp->gr_gid;
+
+    if (chown(file_path, uid, gid) == -1) {
+        QGS_LOG_ERROR("Failed to chown '%s' to %s:%s: %s\n",
+                      file_path, user_name, group_name, strerror(errno));
+        return false;
+    }
+    return true;
+}
+
+// Creates every component of the socket directory path that does not
+// yet exist (like mkdir -p), then enforces correct ownership and
+// permissions on the final directory.
+bool prepareSocketDirectory(const std::string& path) {
+    if (path.empty()) {
+        QGS_LOG_ERROR("prepareSocketDirectory: empty path\n");
+        return false;
+    }
+
     size_t pos = 0;
     std::string dir;
 
@@ -66,9 +120,46 @@ bool createDirectoryRecursive(const std::string& path) {
         }
     }
 
-    // Create the final directory
-    if (mkdir(path.c_str(), 0700) != 0 && errno != EEXIST) {
-        QGS_LOG_ERROR("Failed to create directory: %s\n", path.c_str());
+    // newly_created is true only when mkdir() returns 0
+    // (i.e., we just created it).
+    // It is used below to decide whether chown is appropriate.
+    bool newly_created = (mkdir(path.c_str(), 0755) == 0);
+    if (!newly_created && errno != EEXIST) {
+        QGS_LOG_ERROR("Failed to create directory: %s: %s\n", path.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Always stat the path:
+    // - on a fresh mkdir, this is a cheap confirmation;
+    // - on EEXIST, it catches the case where a non-directory
+    //   (e.g., a regular file) occupies the path, which would
+    //   otherwise surface as a confusing ENOTDIR from bind.
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0) {
+        QGS_LOG_ERROR("Failed to stat path %s: %s\n", path.c_str(), strerror(errno));
+        return false;
+    }
+    if (!S_ISDIR(st.st_mode)) {
+        QGS_LOG_ERROR("Path exists but is not a directory: %s (mode 0%o)\n",
+                      path.c_str(), st.st_mode & 0xFFF);
+        return false;
+    }
+
+    // Always enforce 0755 regardless of whether the directory already existed:
+    // mkdir() is subject to the process umask, and a pre-existing
+    // directory may have been left with incorrect permissions.
+    if (chmod(path.c_str(), 0755) != 0) {
+        QGS_LOG_ERROR("Failed to chmod directory %s: %s\n",
+                      path.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Only chown when the directory was newly created.
+    // Attempting to chown a pre-existing directory owned by root
+    // (e.g. created by systemd's RuntimeDirectory=) would fail
+    // with EPERM unless we are running as root.
+    if (newly_created && !do_chown(path.c_str(), "qgsd", "qgsd")) {
+        QGS_LOG_ERROR("Failed to change ownership of directory: %s\n", path.c_str());
         return false;
     }
     return true;
@@ -79,7 +170,7 @@ bool ensureSocketDirectory(const std::string& socket_file) {
 
     if (last_slash != std::string::npos) {
         std::string dir_path = socket_file.substr(0, last_slash);
-        return createDirectoryRecursive(dir_path);
+        return prepareSocketDirectory(dir_path);
     }
     return true;
 }
@@ -93,12 +184,81 @@ static bool apply_log_level(const char *level_str)
     return true;
 }
 
+void cleanupSocketFile(const std::string& socket_file)
+{
+    // Call unlink() directly and treat ENOENT as success — do NOT guard with
+    // a prior stat()/fileExists() check.  A stat-then-unlink sequence introduces
+    // a TOCTOU race: another process could create or remove the file between the
+    // two calls.  Unconditional unlink() with ENOENT handling is both correct and
+    // race-free: the file either goes away (success) or was already gone (ENOENT).
+    if (unlink(socket_file.c_str()) == 0) {
+        QGS_LOG_INFO("Socket file removed: %s\n", socket_file.c_str());
+    } else if (errno != ENOENT) {
+        QGS_LOG_ERROR("Failed to remove socket file %s: %s\n",
+                      socket_file.c_str(), strerror(errno));
+    }
+}
+
+// Checks whether a QGS process is actively listening on the Unix socket.
+// This distinguishes a stale socket file (left behind after a crash)
+// from a live server.
+// Returns true if the socket is live or if we cannot determine
+// staleness safely:
+// - connect() succeeds: clearly live.
+// - EACCES/EPERM: a server is listening but this process lacks
+//   permission to connect; treat as live to avoid unlinking an
+//   active server's socket (DoS risk).
+// - ECONNREFUSED/ENOENT/ENOTSOCK: stale or missing socket, safe to unlink.
+// - socket() failure or any other error: treat as live
+//   (fail-safe; do not unlink).
+static bool isSocketLive(const std::string& socket_file)
+{
+    int fd = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+    if (fd < 0) {
+        // Cannot create a probe socket (e.g. EMFILE/ENFILE).  Assuming the
+        // existing socket is live to avoid incorrectly unlinking it and
+        // disrupting a running QGS instance.
+        QGS_LOG_ERROR("isSocketLive: socket() failed, assuming live: %s\n", strerror(errno));
+        return true;
+    }
+    if (socket_file.size() >= sizeof(sockaddr_un::sun_path)) {
+        QGS_LOG_ERROR("isSocketLive: socket path too long (%zu >= %zu), assuming live\n",
+                      socket_file.size(), sizeof(sockaddr_un::sun_path));
+        ::close(fd);
+        return true;
+    }
+    struct sockaddr_un addr{};
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, socket_file.c_str(), sizeof(addr.sun_path) - 1);
+    bool connected = (::connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) == 0);
+    int connect_errno = errno;
+    ::close(fd);
+    if (connected)
+        return true;
+    // Only treat as stale when the error unambiguously indicates no listener.
+    if (connect_errno == ECONNREFUSED || connect_errno == ENOENT || connect_errno == ENOTSOCK)
+        return false;
+    // Permission error or anything unexpected: assume live to
+    // avoid unsafe unlink.
+    return true;
+}
+
 int main(int argc, const char* argv[])
 {
     bool no_daemon = false;
-    bool socket_based_communication = true; // if port is not defined in config file and command line, use socket based communication
-    unsigned long int port = MAX_PORT_NUMBER + 1; // accepted port range 0..65535 (0xFFFF)
+
+    // Default to Unix domain socket; switch to vsock only when an
+    // explicit port is given in the config file or on the command line.
+    bool socket_based_communication = true;
+
+    // Accepted port range 0..65535 (0xFFFF).
+    // Use sentinel: Any value above MAX_PORT_NUMBER means "no port configured".
+    // This lets us distinguish port=0 (a valid, explicitly-set value)
+    // from "the user never set a port at all".
+    unsigned long int port = MAX_PORT_NUMBER + 1;
     unsigned long int num_threads = 0;
+    string socket_file = QGS_UNIX_SOCKET_FILE;
+    const mode_t socket_mode = 0660;
     char *endptr = NULL;
     // Initialise logging to stdout before argument and config-file parsing
     // so that early diagnostic messages are visible in the terminal.
@@ -222,7 +382,7 @@ int main(int argc, const char* argv[])
         QGS_LOG_INFO("Parameters after command line check: num_thread = %d, port = %d (%04xh)\n", (uint8_t)num_threads, port, port);
 
     if (socket_based_communication) {
-        cout << "Use unix socket: " << QGS_UNIX_SOCKET_FILE << endl;
+        cout << "Use unix socket: " << socket_file << endl;
     }
 
     if(!no_daemon && daemon(0, 0) < 0) {
@@ -261,16 +421,49 @@ int main(int argc, const char* argv[])
                 asio::generic::stream_protocol::endpoint vsock_ep(&vm_addr, sizeof(vm_addr));
                 ep = vsock_ep;
             } else {
-                if (ensureSocketDirectory(QGS_UNIX_SOCKET_FILE)) {
-                    asio::local::stream_protocol::endpoint unix_ep(QGS_UNIX_SOCKET_FILE);
+                if (ensureSocketDirectory(socket_file)) {
+                    if (isSocketLive(socket_file)) {
+                        QGS_LOG_ERROR("Another QGS instance is already running on %s\n", socket_file.c_str());
+                        exit(1);
+                    }
+                    cleanupSocketFile(socket_file);
+                    asio::local::stream_protocol::endpoint unix_ep(socket_file);
                     ep = unix_ep;
                 } else {
-                    QGS_LOG_ERROR("Access denied to create path for socket: %s\n", QGS_UNIX_SOCKET_FILE);
+                    QGS_LOG_ERROR("Failed to prepare socket directory for %s\n",
+                                  socket_file.c_str());
                     exit(1);
                 }
             }
             QGS_LOG_INFO("About to create QgsServer\n");
-            server = new QgsServer(io_context, ep, (uint8_t)num_threads);
+
+            if (socket_based_communication) {
+                // Set the process umask to the bitwise complement of
+                // socket_mode before QgsServer constructs and binds the socket.
+                // As a result, the kernel creates the socket with socket_mode
+                // permissions from the very first moment it is visible in
+                // the filesystem.
+                // This closes the window between bind() and a post-hoc
+                // chmod() where a client could connect with
+                // looser-than-intended permissions.
+                // The umask is restored immediately after construction so
+                // other file operations in this process are unaffected.
+                mode_t prev_umask = umask(~socket_mode & 0777);
+                server = new QgsServer(io_context, ep, (uint8_t)num_threads);
+                umask(prev_umask);
+                // chmod is an extra safety net: some asynchronous I/O
+                // versions or future refactors may not create the socket
+                // exactly at bind time, so we enforce the mode explicitly
+                // after construction as well.
+                if (chmod(socket_file.c_str(), socket_mode) != 0) {
+                    QGS_LOG_ERROR("Failed to set permissions on socket %s: %s\n",
+                                  socket_file.c_str(), strerror(errno));
+                    cleanupSocketFile(socket_file);
+                    exit(1);
+                }
+            } else {
+                server = new QgsServer(io_context, ep, (uint8_t)num_threads);
+            }
             QGS_LOG_INFO("About to start main loop\n");
             io_context.run();
             QGS_LOG_INFO("Quit main loop\n");
@@ -279,8 +472,7 @@ int main(int argc, const char* argv[])
             QGS_LOG_INFO("Deleted QgsServer object\n");
             delete temp_server;
             if (socket_based_communication) {
-                unlink(QGS_UNIX_SOCKET_FILE);
-                QGS_LOG_INFO("Socket file removed\n");
+                cleanupSocketFile(socket_file);
             }
         } while (reload == true);
     } catch (std::exception &e) {
