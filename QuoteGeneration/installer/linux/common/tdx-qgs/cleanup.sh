@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2026 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -38,17 +38,43 @@ if test $(id -u) -ne 0; then
     exit 1
 fi
 
-# Kill qgsd service
+# Stop the daemon before the package manager removes its binary.
 if [ -d /run/systemd/system ]; then
-    systemctl daemon-reload
-    systemctl stop qgsd
-    systemctl disable qgsd 2> /dev/null
+    # Stop and disable the service before removing its configuration.
+    # || true prevents set -e from aborting if qgsd was never started 
+    # or already crashed — uninstallation must succeed regardless of 
+    # daemon state.
+    systemctl stop qgsd || true
+    # Remove the boot-time symlinks so a future reinstall starts with 
+    # clean enable state
+    systemctl disable qgsd 2>/dev/null || true
+    # Delete files created by the package and cleanup directory if empty afterwards
+    rm -f /etc/systemd/system/qgsd.service.d/socket.conf
+    rmdir --ignore-fail-on-non-empty /etc/systemd/system/qgsd.service.d 2>/dev/null || true
+    # || true: daemon-reload is best-effort on uninstall — its only job is to tell a
+    # running systemd to forget the removed unit.  In containers/chroots systemd is
+    # unreachable and the command fails; that must not abort the rest of cleanup.
+    systemctl daemon-reload || true
 elif [ -d /etc/init/ ]; then
-    /sbin/initctl reload-configuration
-    /sbin/initctl stop qgsd
+    # || true: keep uninstall best-effort — if Upstart tooling is missing or
+    # returns non-zero, package removal must not abort (consistent with stop below).
+    /sbin/initctl reload-configuration || true
+    # Upstart has no drop-in to clean up, but its conf must be reloaded so initctl's 
+    # view of the job matches the on-disk state before we stop it.
+    /sbin/initctl stop qgsd || true
 fi
 
-# Remove qgsd user and group
+# Remove the runtime socket directory if it was not already cleaned up 
+# by systemd's RuntimeDirectory mechanism (e.g. on non-systemd systems 
+# or if the service never started successfully).
+if [ -d /run/tdx-qgs ]; then
+    rmdir /run/tdx-qgs 2>/dev/null || true
+fi
+
+# Remove the dedicated service account last.
+# Deleting the user while the daemon is still running would leave 
+# an ownerless process. By this point the service has been stopped 
+# above, so it's safe to proceed.
 /usr/sbin/userdel qgsd 2> /dev/null || true
 /usr/sbin/groupdel qgsd 2> /dev/null || true
 
