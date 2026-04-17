@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2022 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2026 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,9 +33,40 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <atomic>
 #include "qgs_log.h"
 
 static bool _nosyslog = false;
+static std::atomic<QgsLogLevel> log_level{QGS_LOG_LEVEL_INFO};
+
+static bool stringToLogLevel(const char *logLevelStr, QgsLogLevel& out)
+{
+    if (strcmp(logLevelStr, "error") == 0)
+        out = QGS_LOG_LEVEL_ERROR;
+    else if (strcmp(logLevelStr, "warn") == 0)
+        out = QGS_LOG_LEVEL_WARNING;
+    else if (strcmp(logLevelStr, "info") == 0)
+        out = QGS_LOG_LEVEL_INFO;
+    else if (strcmp(logLevelStr, "debug") == 0)
+        out = QGS_LOG_LEVEL_DEBUG;
+    else
+        return false;
+    return true;
+}
+
+bool qgs_log_set_level_str(const char *level_str)
+{
+    QgsLogLevel parsed;
+    if (!stringToLogLevel(level_str, parsed))
+        return false;
+    log_level.store(parsed);
+    return true;
+}
+
+QgsLogLevel qgs_log_get_level(void)
+{
+    return log_level.load();
+}
 
 void qgs_log_init(void)
 {
@@ -68,11 +99,10 @@ void sgx_proc_log_report(int level, const char *format, ...)
     // so we can always add newline
     if (!format || !(*format))
         return;//ignore
+    if (level > static_cast<int>(log_level.load()))
+        return;//ignore
     va_start(ap, format);
     switch(level){
-        case QGS_LOG_LEVEL_FATAL:
-            priority = LOG_CRIT;
-            break;
         case QGS_LOG_LEVEL_ERROR:
             priority = LOG_ERR;
             break;
@@ -81,6 +111,9 @@ void sgx_proc_log_report(int level, const char *format, ...)
             break;
         case QGS_LOG_LEVEL_INFO:
             priority = LOG_INFO;
+            break;
+        case QGS_LOG_LEVEL_DEBUG:
+            priority = LOG_DEBUG;
             break;
         default:
             va_end(ap);

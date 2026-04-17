@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2022 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2026 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,12 +49,22 @@ typedef quote3_error_t (*sgx_ql_set_logging_callback_t)(sgx_ql_logging_callback_
                                                         sgx_ql_log_level_t loglevel);
 
 void sgx_ql_logging_callback(sgx_ql_log_level_t level, const char *message) {
-    if (level == SGX_QL_LOG_ERROR) {
-        sgx_proc_log_report(1, message);
-
-    } else if (level == SGX_QL_LOG_INFO) {
-        sgx_proc_log_report(3, message);
+    int qgs_level;
+    switch (level) {
+        case SGX_QL_LOG_ERROR:
+            qgs_level = QGS_LOG_LEVEL_ERROR;
+            break;
+        case SGX_QL_LOG_INFO:
+            qgs_level = QGS_LOG_LEVEL_INFO;
+            break;
+        case SGX_QL_LOG_DEBUG:
+        case SGX_QL_LOG_TRACE:
+            qgs_level = QGS_LOG_LEVEL_DEBUG;
+            break;
+        default:
+            qgs_level = QGS_LOG_LEVEL_INFO; // Default to info level if unknown
     }
+    sgx_proc_log_report(qgs_level, "%s", message);
 }
 
 void cleanup(tee_att_config_t *p_ctx) {
@@ -73,6 +83,28 @@ namespace intel { namespace sgx { namespace dcap { namespace qgs {
         return std::any_of(p, p + size,
                            [](uint8_t value)
                            { return value != 0; });
+    }
+
+
+    static sgx_ql_log_level_t translate_log_level(QgsLogLevel qgs_log_level) {
+        switch (qgs_log_level) {
+            case QGS_LOG_LEVEL_ERROR:
+                return SGX_QL_LOG_ERROR;
+            case QGS_LOG_LEVEL_WARNING:
+                // QPL and QCNL do not have a WARNING log level, so WARNING is mapped to INFO
+                // to ensure these messages remain visible rather than being silently dropped.
+                return SGX_QL_LOG_INFO;
+            case QGS_LOG_LEVEL_INFO:
+                return SGX_QL_LOG_INFO;
+            case QGS_LOG_LEVEL_DEBUG:
+                return SGX_QL_LOG_DEBUG;
+            default:
+                // Unknown level: default to DEBUG so QPL/QCNL forward all
+                // messages to QGS and let QGS apply its own filtering.
+                // This avoids silently dropping messages when a new QgsLogLevel
+                // is added without updating this function.
+                return SGX_QL_LOG_DEBUG;
+        }
     }
 
     data_buffer get_resp(const uint8_t *p_req, uint32_t req_size) {
@@ -113,8 +145,8 @@ namespace intel { namespace sgx { namespace dcap { namespace qgs {
                 sgx_ql_set_logging_callback_t ql_set_logging_callback =
                     (sgx_ql_set_logging_callback_t)dlsym(p_handle, "sgx_ql_set_logging_callback");
                 if (dlerror() == NULL && ql_set_logging_callback) {
-                    // Set log level to SGX_QL_LOG_ERROR
-                    ql_set_logging_callback(sgx_ql_logging_callback, SGX_QL_LOG_ERROR);
+                    ql_set_logging_callback(sgx_ql_logging_callback,
+                                            translate_log_level(qgs_log_get_level()));
                 } else {
                     QGS_LOG_WARN("Failed to set logging callback for the quote provider library.\n");
                 }
@@ -355,8 +387,8 @@ namespace intel { namespace sgx { namespace dcap { namespace qgs {
                 sgx_ql_set_logging_callback_t ql_set_logging_callback =
                     (sgx_ql_set_logging_callback_t)dlsym(p_handle, "sgx_ql_set_logging_callback");
                 if (dlerror() == NULL && ql_set_logging_callback) {
-                    // Set log level to SGX_QL_LOG_ERROR
-                    ql_set_logging_callback(sgx_ql_logging_callback, SGX_QL_LOG_ERROR);
+                    ql_set_logging_callback(sgx_ql_logging_callback,
+                                            translate_log_level(qgs_log_get_level()));
                 } else {
                     QGS_LOG_WARN("Failed to set logging callback for the quote provider library.\n");
                 }

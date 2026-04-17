@@ -84,6 +84,15 @@ bool ensureSocketDirectory(const std::string& socket_file) {
     return true;
 }
 
+static bool apply_log_level(const char *level_str)
+{
+    if (!qgs_log_set_level_str(level_str)) {
+        cout << "Please input valid log level (error|warn|info|debug)" << endl;
+        return false;
+    }
+    return true;
+}
+
 int main(int argc, const char* argv[])
 {
     bool no_daemon = false;
@@ -91,10 +100,20 @@ int main(int argc, const char* argv[])
     unsigned long int port = MAX_PORT_NUMBER + 1; // accepted port range 0..65535 (0xFFFF)
     unsigned long int num_threads = 0;
     char *endptr = NULL;
-    if (argc > 4) {
-        cout << "Usage: " << argv[0] << "[--no-daemon] [-p=port_number] [-n=number_threads]"
-             << endl;
-        exit(1);
+    // Initialise logging to stdout before argument and config-file parsing
+    // so that early diagnostic messages are visible in the terminal.
+    // nosyslog=true is mandatory here: daemon(3) has not been called yet,
+    // so the final log destination is not yet known.  openlog() is
+    // intentionally skipped; it will be called below after the fork.
+    QGS_LOG_INIT_EX(true);
+
+    // First pass: apply -l= early so that the log level is set before any
+    // QGS_LOG_* call, including those emitted during config-file parsing.
+    for (int i = 1; i < argc; i++) {
+        if (strncmp(argv[i], "-l=", 3) == 0) {
+            if (!apply_log_level(argv[i] + 3)) exit(1);
+            break;
+        }
     }
 
     // Use the port number and number of threads from QGS_CONFIG_FILE
@@ -187,8 +206,12 @@ int main(int argc, const char* argv[])
             }
             cout << "thread number [" << num_threads << "] found in cmdline" << endl;
             continue;
+        } else if (strncmp(argv[i], "-l=", 3) == 0) {
+            if (!apply_log_level(argv[i] + 3)) exit(1);
+            cout << "log level [" << argv[i] + 3 << "] found in cmdline" << endl;
+            continue;
         } else {
-            cout << "Usage: " << argv[0] << "[--no-daemon] [-p=port_number] [-n=number_threads]"
+            cout << "Usage: " << argv[0] << " [--no-daemon] [-p=port_number] [-n=number_threads] [-l=log_level]"
                 << endl;
             exit(1);
         }
@@ -206,6 +229,11 @@ int main(int argc, const char* argv[])
         exit(1);
     }
 
+    // Re-initialise logging now that the daemon mode is known: route to
+    // syslog in daemon mode, or keep stdout when running with --no-daemon.
+    // Calling QGS_LOG_INIT_EX twice is safe: the first call above passed
+    // nosyslog=true, so openlog() was never called and there is no
+    // existing syslog connection to close or reopen.
     QGS_LOG_INIT_EX(no_daemon);
     signal(SIGCHLD, SIG_IGN);
     signal(SIGPIPE, SIG_IGN);

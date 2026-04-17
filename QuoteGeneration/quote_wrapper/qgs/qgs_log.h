@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2022 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2026 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,28 +33,31 @@
 #define __QGS_LOG_H__
 
 #include "se_trace.h"
-#define QGS_LOG_LEVEL_FATAL   0
-#define QGS_LOG_LEVEL_ERROR   1
-#define QGS_LOG_LEVEL_WARNING 2
-#define QGS_LOG_LEVEL_INFO    3
+
+typedef enum QgsLogLevel
+{
+    QGS_LOG_LEVEL_ERROR,
+    QGS_LOG_LEVEL_WARNING,
+    QGS_LOG_LEVEL_INFO,
+    QGS_LOG_LEVEL_DEBUG
+} QgsLogLevel;
+
 #ifdef __cplusplus
 extern "C" {
 #endif/*__cplusplus*/
     void qgs_log_init(void);
     void qgs_log_init_ex(bool nosyslog);
     void qgs_log_fini(void);
+    bool qgs_log_set_level_str(const char *level_str);
+    QgsLogLevel qgs_log_get_level(void);
 #ifdef __cplusplus
 };
 #endif/*__cplusplus*/
 
-#define QGS_LOG_FATAL(format, args...) \
-    do {\
-        sgx_proc_log_report(QGS_LOG_LEVEL_FATAL, format, ## args); \
-    }while(0)
 #define QGS_LOG_ERROR(format, args...) \
     do { \
         sgx_proc_log_report(QGS_LOG_LEVEL_ERROR, format, ## args); \
-    }while(0);
+    }while(0)
 #define QGS_LOG_WARN(format, args...)  \
     do { \
         sgx_proc_log_report(QGS_LOG_LEVEL_WARNING, format, ## args); \
@@ -62,6 +65,10 @@ extern "C" {
 #define QGS_LOG_INFO(format, args...)  \
     do { \
         sgx_proc_log_report(QGS_LOG_LEVEL_INFO, format, ## args); \
+    }while(0)
+#define QGS_LOG_DEBUG(format, args...) \
+    do { \
+        sgx_proc_log_report(QGS_LOG_LEVEL_DEBUG, format, ## args); \
     }while(0)
 #define QGS_LOG_INIT() qgs_log_init()
 #define QGS_LOG_INIT_EX(nosyslog) qgs_log_init_ex(nosyslog)
