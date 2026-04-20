@@ -1,2 +1,3 @@
 DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/dcap_quoteverify/inc/sgx_dcap_quoteverify.h	<installdir>/include/sgx_dcap_quoteverify.h	0	main	STP
+<deliverydir>/appraisal/qal/sgx_dcap_qal.h	<installdir>/include/sgx_dcap_qal.h	0	main	STP

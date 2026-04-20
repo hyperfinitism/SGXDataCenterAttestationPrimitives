@@ -31,7 +31,7 @@
 #include <iostream>
 #include <sstream>
 #include "jwt-cpp/jwt.h"
-#include <sgx_dcap_qal.h>
+#include "sgx_dcap_qal.h"
 #include "qal_json.h"
 #include "qal_common.h"
 #include "ec_key.h"

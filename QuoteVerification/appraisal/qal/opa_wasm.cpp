@@ -5,7 +5,7 @@
  */
 
 #include "wasm_export.h"
-#include <sgx_dcap_qal.h>
+#include "sgx_dcap_qal.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
