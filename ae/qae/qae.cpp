@@ -12,7 +12,7 @@
 #include "sgx_trts.h"
 #include "sgx_report.h"
 #include "sgx_utils.h"
-#include <sgx_dcap_constant_val.h>
+#include <sgx_dcap_constant_val.h>  // Provided by SGX SDK (version >= 2.29)
 #include "encode_helper.h"
 #include "sgx_tcrypto.h"
 #include <stdint.h>

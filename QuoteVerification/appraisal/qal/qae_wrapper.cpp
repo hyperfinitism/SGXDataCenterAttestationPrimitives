@@ -9,7 +9,6 @@
 #include "qae_u.h"
 #include "sgx_error.h"
 #include "qae_wrapper.h"
-#include "sgx_dcap_qal.h"
 #include "se_trace.h"
 #include "metadata.h"
 #include "sgx_urts_wrapper.h"
@@ -20,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include "wrapped_sgx_dcap_qal.h"
 
 #define QAE_NAME "libsgx_qae.signed.so"
 

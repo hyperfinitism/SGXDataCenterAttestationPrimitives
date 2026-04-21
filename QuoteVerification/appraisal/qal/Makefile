@@ -13,8 +13,7 @@ WARM_Lib_Path := $(WARM_Top_Path)/product-mini/platforms/linux/build/
 JWT_CPP_Path := ../../../external/jwt-cpp/
 RAPIDJSON_DIR :=  ../../QVL/Src/ThirdParty/rapidjson/include
 PREBUILD_OPENSSL_PATH := ../../../prebuilt/openssl
-QAL_Include_Path := -I./ \
-                -I$(SGX_SDK)/include \
+QAL_Include_Path := -I$(SGX_SDK)/include \
                 -I$(PREBUILD_OPENSSL_PATH)/inc \
                 -I$(DCAP_QG_DIR)/common/inc/internal/linux \
                 -I$(WARM_Top_Path)/core/iwasm/include \

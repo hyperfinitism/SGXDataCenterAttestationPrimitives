@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "sgx_dcap_qal.h"
+
 #include <stdlib.h>
 #include <string>
 #include <sstream>
@@ -15,6 +15,7 @@
 #include "qae_wrapper.h"
 #include "sgx_dcap_pcs_com.h"
 #include "qal_auth.h"
+#include "wrapped_sgx_dcap_qal.h"
 
 
 #define INVALID_AUTH_STATUS -2

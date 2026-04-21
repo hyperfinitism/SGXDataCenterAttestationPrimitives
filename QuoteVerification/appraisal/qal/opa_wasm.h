@@ -8,7 +8,7 @@
 #define OPA_WASM_H
 
 #include "wasm_export.h"
-#include "sgx_dcap_qal.h"
+#include "wrapped_sgx_dcap_qal.h"
 
 
 #define DEFAULT_STACK_SIZE 8 * 1024

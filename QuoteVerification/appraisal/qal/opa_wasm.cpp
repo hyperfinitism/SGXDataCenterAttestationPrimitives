@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+
 #include "wasm_export.h"
-#include "sgx_dcap_qal.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -18,6 +18,7 @@
 #include "opa_wasm.h"
 #include "ec_key.h"
 #include "wasm_buf.h"
+#include "wrapped_sgx_dcap_qal.h"
 
 std::map<int, std::string> g_builtins;
 std::map<std::string, void *> g_builtin_func_map;

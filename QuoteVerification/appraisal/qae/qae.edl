@@ -7,7 +7,7 @@
 enclave {
     include "sgx_ql_quote.h"
     include "time.h"
-    include "sgx_dcap_qal.h"
+    include "wrapped_sgx_dcap_qal.h"
 
     from "sgx_tstdc.edl" import *;
 

@@ -36,9 +36,9 @@
 #include <fstream>
 #include <sgx_ql_quote.h>
 #include "sgx_dcap_quoteverify.h"
-#include "sgx_dcap_qal.h"
 #include "jwt-cpp/jwt.h"
 #include <sgx_dcap_qae_tvl.h>
+#include <sgx_dcap_qal.h>  // Provided by libsgx-dcap-quote-verify-dev DEB/RPM package
 #include "Enclave_u.h"
 #include "sgx_urts.h"
 

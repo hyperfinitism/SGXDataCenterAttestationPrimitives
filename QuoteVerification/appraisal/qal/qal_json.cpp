@@ -29,14 +29,14 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 #include <iostream>
+#include <openssl/param_build.h>
+#include <openssl/core_names.h>
 #include <sstream>
 #include "jwt-cpp/jwt.h"
-#include "sgx_dcap_qal.h"
 #include "qal_json.h"
 #include "qal_common.h"
 #include "ec_key.h"
-#include <openssl/param_build.h>
-#include <openssl/core_names.h>
+#include "wrapped_sgx_dcap_qal.h"
 
 #ifndef BUILD_QAE
 #include "sgx_dcap_pcs_com.h" // For default policy from pccs
