@@ -97,10 +97,10 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
 
     void start() {
         m_timer.expires_after(timeout);
-        m_timer.async_wait([this](boost::system::error_code ec) {
+        m_timer.async_wait([self = shared_from_this()](boost::system::error_code ec) {
             if (!ec) {
                 QGS_LOG_ERROR("timeout\n");
-                stop();
+                self->stop();
             }
         });
         start_read();
@@ -140,6 +140,25 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
           m_timer(io_context) {
     }
 
+    void handle_read_more(std::size_t bytes_read_so_far,
+                          const boost::system::error_code &ec,
+                          std::size_t bytes_transferred) {
+        handle_read(ec, bytes_read_so_far + bytes_transferred);
+    }
+
+    void continue_read(std::size_t bytes_read_so_far, std::size_t total_size) {
+        m_readbuf.resize(total_size);
+        asio::async_read(m_socket,
+                         asio::buffer(&m_readbuf[bytes_read_so_far],
+                                      m_readbuf.size() - bytes_read_so_far),
+                         asio::transfer_exactly(total_size - bytes_read_so_far),
+                         boost::bind(&QgsConnection::handle_read_more,
+                                     shared_from_this(),
+                                     bytes_read_so_far,
+                                     asio::placeholders::error,
+                                     asio::placeholders::bytes_transferred));
+    }
+
     void handle_read(const boost::system::error_code &ec, std::size_t bytes_transferred) {
         std::ostringstream oss;
         oss << ec.category().name() << ':' << ec.value();
@@ -156,6 +175,12 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
             QGS_LOG_INFO("handle_read:[%s]\n", oss.str().c_str());
 
             unsigned msg_len = decode_header(m_readbuf);
+            if (msg_len > 1 * 1024 * 1024) {
+                QGS_LOG_ERROR("invalid message length, close connection!.\n");
+                m_timer.cancel();
+                stop();
+                return;
+            }
             uint32_t msg_type = QGS_MSG_TYPE_MAX;
             auto ptr = reinterpret_cast<qgs_msg_header_t *>(&m_readbuf[HEADER_SIZE]);
             if (!msg_len
@@ -169,14 +194,9 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
                     handle_raw_request();
                 } else if (bytes_transferred < raw_report_size) {
                     QGS_LOG_INFO("wait for [%zu] bytes!.\n", raw_report_size - bytes_transferred);
-                    asio::async_read(m_socket, asio::buffer(m_readbuf),
-                                     asio::transfer_exactly(raw_report_size - bytes_transferred),
-                                     boost::bind(&QgsConnection::handle_read,
-                                                 shared_from_this(),
-                                                 asio::placeholders::error,
-                                                 asio::placeholders::bytes_transferred));
+                    continue_read(bytes_transferred, raw_report_size);
                 } else {
-                    QGS_LOG_INFO("invalid request, close connection!.\n");
+                    QGS_LOG_ERROR("invalid request, close connection!.\n");
                     m_timer.cancel();
                     stop();
                 }
@@ -184,14 +204,10 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
             } else {
                 if (msg_len + HEADER_SIZE > bytes_transferred) {
                     QGS_LOG_INFO("wait for [%zu] bytes!.\n", msg_len + HEADER_SIZE - bytes_transferred);
-                    asio::async_read(m_socket, asio::buffer(m_readbuf),
-                                     asio::transfer_exactly(msg_len + HEADER_SIZE - bytes_transferred),
-                                     boost::bind(&QgsConnection::handle_read,
-                                                 shared_from_this(),
-                                                 asio::placeholders::error,
-                                                 asio::placeholders::bytes_transferred));
+                    continue_read(bytes_transferred,
+                                  static_cast<std::size_t>(msg_len) + HEADER_SIZE);
                 } else {
-                    QGS_LOG_INFO("process legecy request [%zu] bytes!.\n", bytes_transferred);
+                    QGS_LOG_INFO("process legacy request [%zu] bytes!.\n", bytes_transferred);
                     m_readbuf.resize(bytes_transferred);
                     handle_request();
                     return;
@@ -216,16 +232,16 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
         oss << boost::this_thread::get_id();
         QGS_LOG_INFO("unpack message successfully in thread [%s]\n",
                         oss.str().c_str());
-        asio::post(m_pool, [this, self = shared_from_this()] {
+        asio::post(m_pool, [self = shared_from_this()] {
             boost::system::error_code ec;
 
-            data_buffer resp = prepare_response(const_cast<data_buffer &>(m_readbuf));
+            data_buffer resp = self->prepare_response(self->m_readbuf);
 
             uint32_t resp_size = (uint32_t)resp.size();
             if (!resp_size) {
                 QGS_LOG_ERROR("resp_size is 0");
-                m_timer.cancel();
-                stop();
+                self->m_timer.cancel();
+                self->stop();
                 return;
             }
             data_buffer writebuf;
@@ -235,11 +251,11 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
             std::ostringstream oss1;
             oss1 << boost::this_thread::get_id();
             QGS_LOG_INFO("About to write response in thread [%s]\n", oss1.str().c_str());
-            if (asio::write(m_socket, asio::buffer(writebuf), ec) != writebuf.size()) {
+            if (asio::write(self->m_socket, asio::buffer(writebuf), ec) != writebuf.size()) {
                 QGS_LOG_INFO("Failed to write all buffer in thread [%s]\n", oss1.str().c_str());
             }
-            m_timer.cancel();
-            stop();
+            self->m_timer.cancel();
+            self->stop();
         });
     }
 
@@ -248,26 +264,26 @@ class QgsConnection : public boost::enable_shared_from_this<QgsConnection> {
         oss << boost::this_thread::get_id();
         QGS_LOG_INFO("unpack message successfully in thread [%s]\n",
                      oss.str().c_str());
-        asio::post(m_pool, [this, self = shared_from_this()] {
+        asio::post(m_pool, [self = shared_from_this()] {
             boost::system::error_code ec;
 
-            data_buffer resp = prepare_raw_response(const_cast<data_buffer &>(m_readbuf));
+            data_buffer resp = self->prepare_raw_response(self->m_readbuf);
 
             uint32_t resp_size = (uint32_t)resp.size();
             if (!resp_size) {
-                QGS_LOG_INFO("resp_size is 0");
-                m_timer.cancel();
-                stop();
+                QGS_LOG_ERROR("resp_size is 0");
+                self->m_timer.cancel();
+                self->stop();
                 return;
             }
             std::ostringstream oss1;
             oss1 << boost::this_thread::get_id();
             QGS_LOG_INFO("About to write response in thread [%s]\n", oss1.str().c_str());
-            if (asio::write(m_socket, asio::buffer(resp), ec) != resp.size()) {
+            if (asio::write(self->m_socket, asio::buffer(resp), ec) != resp.size()) {
                 QGS_LOG_INFO("Failed to write all buffer in thread [%s]\n", oss1.str().c_str());
             }
-            m_timer.cancel();
-            stop();
+            self->m_timer.cancel();
+            self->stop();
         });
     }
 
