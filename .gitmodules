@@ -9,6 +9,10 @@
 [submodule "external/jwt-cpp"]
 	path = external/jwt-cpp
 	url = https://github.com/Thalhammer/jwt-cpp.git
+	# Build applies 0001-Add-a-macro-to-disable-time-support-in-jwt-for-SGX.patch
+	# in-place (ae/qae/Makefile, ae/QvE/Makefile), modifying jwt.h and defaults.h.
+	# ignore = dirty prevents these expected modifications from showing in git status.
+	ignore = dirty
 [submodule "external/gtest/src"]
 	path = external/gtest/src
 	url = https://github.com/google/googletest.git

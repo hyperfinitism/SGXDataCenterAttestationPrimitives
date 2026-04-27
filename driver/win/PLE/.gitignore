@@ -1,0 +1,5 @@
+# Build artifacts
+build-intel_signed/
+
+# Build-generated signing keys
+sgx_signing_key.pem

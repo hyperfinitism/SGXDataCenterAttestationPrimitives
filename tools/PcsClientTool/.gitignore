@@ -1,4 +1,5 @@
 __pycache__/
+.venv/
 installer/linux/common/intel-tee-pcs-client-tool/gen_source.py
 output/
 

@@ -6,6 +6,7 @@
 *.a
 *.lib
 *.pdb
+*.map
 
 #share object and dynamic-link library
 *.so
@@ -22,11 +23,57 @@
 #output files
 build
 out
+static_out/
 *.d
+.config_*
+
+#Downloaded prebuilts
+prebuilt/
+prebuilt_dcap_*.tar.gz
+SHA256SUM_prebuilt_dcap_*.cfg
+
+# Built executables
+tools/PCKRetrievalTool/PCKIDRetrievalTool
+QuoteGeneration/quote_wrapper/qgs
+QuoteGeneration/quote_wrapper/test_client
+QuoteVerification/appraisal/tee_appraisal_tool/tee_appraisal_tool
+
+#CMake outputs
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+install_manifest.txt
+CMakeLists.txt.user
+CMakeUserPresets.json
+CTestTestfile.cmake
+Testing/
+_deps/
+cmake-build/
 
 #/QuoteGeneration/build/
 **/Debug/
 **/Release/
+
+# Installer intermediates and packages
+**/installer/**/common/*/output/
+
+**/installer/**/common/*/gen_source.py
+!QuoteGeneration/installer/linux/common/gen_source/gen_source.py
+
+**/installer/**/deb/**/*.deb
+**/installer/**/deb/**/*.ddeb
+**/installer/**/deb/**/*.buildinfo
+**/installer/**/deb/**/*.changes
+**/installer/**/deb/**/*.tar.xz
+**/installer/**/deb/**/*.dsc
+**/installer/**/deb/**/*.orig.tar.gz
+
+**/installer/**/deb/*/*-*
+!**/installer/**/deb/*/*-1.0
+
+**/installer/**/rpm/**/*.rpm
+**/installer/**/rpm/*/*-[0-9]*
 
 #editor
 .cache
@@ -39,8 +86,26 @@ compile_commands.json
 QuoteVerification/sgxssl
 
 #IDE files
-.vscode
-.idea
+.idea/
+.vscode/
+.cache/
 
 #mergetool files
 *.orig
+*.diff
+*.BASE.*
+*.LOCAL.*
+*.REMOTE.*
+*.BACKUP.*
+*.bak
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
