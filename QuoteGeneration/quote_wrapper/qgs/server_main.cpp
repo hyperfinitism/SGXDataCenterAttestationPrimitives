@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2011-2025 Intel Corporation
+ * Copyright(c) 2011-2026 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -7,6 +7,8 @@
 #include "qgs_log.h"
 #include <iostream>
 #include <fstream>
+#include <signal.h>
+#include <string.h>
 #include <linux/vm_sockets.h>
 
 #define QGS_CONFIG_FILE "/etc/qgs.conf"
@@ -22,7 +24,10 @@ void signal_handler(int sig)
 {
     switch(sig)
     {
+        case SIGINT:
         case SIGTERM:
+            QGS_LOG_INFO("Received signal %d (%s), initiating shutdown\n",
+                         sig, strsignal(sig));
             if (server)
             {
                 reload = false;
@@ -30,6 +35,8 @@ void signal_handler(int sig)
             }
             break;
         case SIGHUP:
+            QGS_LOG_INFO("Received signal %d (%s), initiating reload\n",
+                         sig, strsignal(sig));
             if (server)
             {
                 reload = true;
@@ -209,6 +216,12 @@ int main(int argc, const char* argv[])
     signal(SIGCHLD, SIG_IGN);
     signal(SIGPIPE, SIG_IGN);
     signal(SIGHUP, signal_handler);
+    if (no_daemon) {
+        // Only install SIGINT handler in foreground mode.
+        // It is a terminal-originated signal (Ctrl+C) that is meaningless
+        // to a daemon which has no controlling terminal.
+        signal(SIGINT, signal_handler);
+    }
     signal(SIGTERM, signal_handler);
     QGS_LOG_INFO("Added signal handler\n");
 
