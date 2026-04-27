@@ -75,6 +75,11 @@ update_spec() {
     if [ "${min_version}" != "${cur_version}" ]; then
         sed -i "s/^Recommends:/Requires:  /" SPECS/${DCAP_QVL_PACKAGE_NAME}.spec
     fi
+
+    # RPM %changelog requires English format "Day Mon DD YYYY"; use LC_ALL=C to force English locale
+    BUILD_DATE=$(LC_ALL=C date +"%a %b %d %Y")
+    sed -i "s/@date@/${BUILD_DATE}/" SPECS/${DCAP_QVL_PACKAGE_NAME}.spec
+
     popd
 }
 

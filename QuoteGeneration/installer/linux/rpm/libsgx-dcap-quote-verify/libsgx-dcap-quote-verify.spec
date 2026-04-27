@@ -14,7 +14,7 @@ Group:          Development/Libraries
 Recommends:     libsgx-ae-qve >= %{version}-%{release} libsgx-urts >= 2.29
 
 License:        BSD License
-URL:            https://github.com/intel/SGXDataCenterAttestationPrimitives
+URL:            https://github.com/intel/confidential-computing.tee.dcap
 Source0:        %{name}-%{version}.tar.gz
 
 %description
@@ -55,5 +55,15 @@ rm -fr %{?buildroot}/%{name}-dev
 %debug_package
 
 %changelog
-* Tue Jul 28 2020 SGX Team
-- Initial Release
+* @date@ Intel Confidential Computing Team <confidential.computing@intel.com> - @version@-1
+- Release v1.26
+  See https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.26 for full release notes.
+
+- ['-devel' package changes]
+  1. MOVED 'sgx_qve_header.h' file from this package to 'libsgx-headers>=2.29'
+  2. CHANGED `sgx_dcap_qal.h` to define QAL-side APIs only (removed type definitions).
+     Common types were extracted to 'sgx_dcap_qal_types.h' (new, provided by 'libsgx-headers>=2.29')
+
+* Wed Mar 4 2026 Intel Confidential Computing Team <confidential.computing@intel.com> - 1.25.100.1-1
+- Release v1.25
+  See release notes at https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.25 for more details and historical changelog

@@ -1,6 +1,18 @@
-libsgx-dcap-quote-verify (1.0-1) unstable; urgency=low
+libsgx-dcap-quote-verify (9.9.9.9-1) unstable; urgency=low
 
-  * 1.0 Gold release
-  * Provide the Quote Verification Library
+  * Release v1.26
+    See https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.26 for full release notes.
 
- -- Hongyan Jiang <hongyan.jiang@intel.com>  Thu, 16 Jul 2020 14:57:32 +0800
+  * ['-dev' package changes]
+      1. MOVED 'sgx_qve_header.h' file from this package to 'libsgx-headers>=2.29'
+      2. CHANGED `sgx_dcap_qal.h` to define QAL-side APIs only (removed type definitions).
+         Common types were extracted to 'sgx_dcap_qal_types.h' (new, provided by 'libsgx-headers>=2.29')
+
+ -- Intel Confidential Computing Team <confidential.computing@intel.com>  Fri, 01 Jan 2100 00:00:00 +0000
+
+libsgx-dcap-quote-verify (1.25.100.1-all1) unstable; urgency=low
+
+  * Release v1.25
+  See release notes at https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.25 for more details and historical changelog
+
+ -- Intel Confidential Computing Team <confidential.computing@intel.com>  Wed, 4 Mar 2026 12:00:33 +0000
