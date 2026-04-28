@@ -45,5 +45,24 @@ if [ -x %{_install_path}/startup.sh ]; then %{_install_path}/startup.sh; fi
 if [ -x %{_install_path}/cleanup.sh ]; then %{_install_path}/cleanup.sh; fi
 
 %changelog
-* Thu Feb 18 2021 SGX Team
-- Initial Release
+* @date@ Intel Confidential Computing Team <confidential.computing@intel.com> - @version@-1
+- Release v1.26
+  See https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.26 for full release notes.
+
+- Key changes:
+  1. [BREAKING] Unix domain socket is now the default transport; existing deployments
+     relying on vsock must explicitly re-add 'port=<n>' to /etc/qgs.conf.
+  2. /etc/qgs.conf is preserved across RPM upgrades (%%config(noreplace)).
+  3. Socket directory and file are created with correct ownership
+     (qgsd:qgsd) and permissions (dir 0755, socket 0660).
+     Any user or service that needs to communicate with QGS over the
+     Unix domain socket must be a member of the qgsd group:
+       usermod -aG qgsd <username>
+  4. startup.sh writes a systemd drop-in to set RuntimeDirectory=tdx-qgs
+     so systemd manages the socket directory lifecycle.
+  5. Stale socket files from a prior unclean shutdown are automatically cleaned up
+     on startup.
+
+* Wed Mar 04 2026 Intel Confidential Computing Team <confidential.computing@intel.com> - 1.25.100.1-1
+- Release v1.25
+  See release notes at https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.25 for more details and historical changelog

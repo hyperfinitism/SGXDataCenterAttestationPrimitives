@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright(c) 2025 Intel Corporation
+# Copyright(c) 2026 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
@@ -43,7 +43,8 @@ update_spec() {
     
     sed -i "s#@install_path@#${PCS_CLIENT_PACKAGE_PATH}/${PCS_CLIENT_PACKAGE_INSTALL_DIR_NAME}#" SPECS/${PCS_CLIENT_PACKAGE_NAME}.spec
     sed -i "s/@version@/${DCAP_VERSION}/" SPECS/${PCS_CLIENT_PACKAGE_NAME}.spec
-    sed -i "s#@date@#$(date +"%a %b %d %Y")#" SPECS/${PCS_CLIENT_PACKAGE_NAME}.spec
+    # RPM %changelog requires English format "Day Mon DD YYYY"; use LC_ALL=C to force English locale
+    sed -i "s#@date@#$(LC_ALL=C date +"%a %b %d %Y")#" SPECS/${PCS_CLIENT_PACKAGE_NAME}.spec
     sed -i "s#@main_script_name@#${PCS_CLIENT_MAIN_SCRIPT_NAME}#" SPECS/${PCS_CLIENT_PACKAGE_NAME}.spec
     sed -i "s#@pkg_wrapper_script_name@#${PCS_CLIENT_WRAPPER_SCRIPT_NAME}#" SPECS/${PCS_CLIENT_PACKAGE_NAME}.spec
 

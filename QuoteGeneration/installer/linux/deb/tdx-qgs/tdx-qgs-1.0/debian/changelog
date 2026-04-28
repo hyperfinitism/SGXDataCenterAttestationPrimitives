@@ -1,5 +1,31 @@
-tdx-qgs (1.0-1) unstable; urgency=low
+tdx-qgs (9.9.9.9-1) unstable; urgency=low
 
-  * Initial Release
+  * Release v1.26
+    See https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.26 for full release notes.
 
- -- Xiangquan Liu <xiangquan.liu@intel.com>  Wed, 23 Dec 2020 15:23:51 +0800
+  * Key changes:
+    1. [BREAKING] Unix domain socket is now the default transport; existing deployments
+       relying on vsock must explicitly re-add 'port=<n>' to /etc/qgs.conf.
+    2. [BREAKING] /etc/qgs.conf will be overwritten on upgrade from earlier releases.
+       Because this is the first release that declares qgs.conf as a dpkg
+       conffile, dpkg has no previous checksum to compare against and will
+       install the package's version over any local customizations.
+       Back up /etc/qgs.conf before upgrading if you have local changes.
+    3. Socket directory and file are created with correct ownership
+       (qgsd:qgsd) and permissions (dir 0755, socket 0660).
+       Any user or service that needs to communicate with QGS over the
+       Unix domain socket must be a member of the qgsd group:
+         usermod -aG qgsd <username>
+    4. startup.sh writes a systemd drop-in to set RuntimeDirectory=tdx-qgs
+       so systemd manages the socket directory lifecycle.
+    5. Stale socket files from a prior unclean shutdown are automatically cleaned up
+       on startup.
+
+ -- Intel Confidential Computing Team <confidential.computing@intel.com>  Fri, 01 Jan 2100 00:00:00 +0000
+
+tdx-qgs (1.25.100.1-all1) unstable; urgency=low
+
+  * Release v1.25
+    See release notes at https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.25 for more details and historical changelog
+
+ -- Intel Confidential Computing Team <confidential.computing@intel.com>  Wed, 04 Mar 2026 12:00:33 +0000

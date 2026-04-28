@@ -194,8 +194,17 @@ if [ $1 == 0 -a -x %{_install_path}/cleanup.sh ]; then %{_install_path}/cleanup.
 
 %changelog
 * @date@ Intel Confidential Computing Team <confidential.computing@intel.com> - @version@-1
-- Installer: moved Python Virtual Environment to '.venv' and fixed version upgrade path (%preun upgrade guard)
+- Release v1.26
+  See https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.26 for full release notes.
+
+* Wed Mar 04 2026 Intel Confidential Computing Team <confidential.computing@intel.com> - 1.25.100.1-1
+- Release v1.25
+  See https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.25 for full release notes.
+- Key changes:
+  1. Installer: moved Python Virtual Environment to '.venv' and fixed version upgrade path (%preun upgrade guard)
 
 * Wed Oct 01 2025 Intel Confidential Computing Team <confidential.computing@intel.com> - 1.24.100.2-1
-- Initial packaged release of pcsclient.py. 
-  Follows the former (all-in-one) pccsadmin.py tool split into (PCCS-specific) pccsadmin.py and (generic) pcsclient.py
+- Release v1.24
+  See https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.24 for full release notes.
+- Key changes:
+  1. Initial packaged release of pcsclient.py. Follows the former (all-in-one) pccsadmin.py tool split into (PCCS-specific) pccsadmin.py and (generic) pcsclient.py

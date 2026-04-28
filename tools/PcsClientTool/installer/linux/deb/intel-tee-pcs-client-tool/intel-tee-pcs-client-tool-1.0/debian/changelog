@@ -1,12 +1,27 @@
 intel-tee-pcs-client-tool (9.9.9.9-1) unstable; urgency=low
 
-  * Installer: moved Python Virtual Environment to '.venv'
+  * Release v1.26
+    See https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.26 for full release notes.
 
  -- Intel Confidential Computing Team <confidential.computing@intel.com>  Fri, 01 Jan 2100 00:00:00 +0000
 
+intel-tee-pcs-client-tool (1.25.100.1-all1) unstable; urgency=low
+
+  * Release v1.25
+    See https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.25 for full release notes.
+
+  * Key changes:
+    1. Installer: moved Python Virtual Environment to '.venv'
+
+ -- Intel Confidential Computing Team <confidential.computing@intel.com>  Wed, 04 Mar 2026 12:00:33 +0000
+
 intel-tee-pcs-client-tool (1.24.100.2-all1) unstable; urgency=low
 
-  * Initial packaged release of pcsclient.py. 
-    Follows the former pccsadmin.py (multi-purpose) tool's split into (PCCS-specific)pccsadmin.py and (generic)pcsclient.py
+  * Release v1.24
+    See https://github.com/intel/confidential-computing.tee.dcap/releases/tag/DCAP_1.24 for full release notes.
+
+  * Key changes:
+    1. Initial packaged release of pcsclient.py.
+       Follows the former pccsadmin.py (multi-purpose) tool's split into (PCCS-specific) pccsadmin.py and (generic) pcsclient.py
 
  -- Intel Confidential Computing Team <confidential.computing@intel.com>  Wed, 01 Oct 2025 13:01:21 +0100

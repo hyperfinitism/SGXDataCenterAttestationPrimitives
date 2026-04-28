@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2026 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -75,6 +75,11 @@ update_spec() {
     if [ "${min_version}" != "${cur_version}" ]; then
         sed -i "s/^Recommends:/Requires:  /" SPECS/${TDX_QGS_PACKAGE_NAME}.spec
     fi
+
+    # RPM %changelog requires English format "Day Mon DD YYYY"; use LC_ALL=C to force English locale
+    BUILD_DATE=$(LC_ALL=C date +"%a %b %d %Y")
+    sed -i "s/@date@/${BUILD_DATE}/" SPECS/${TDX_QGS_PACKAGE_NAME}.spec
+
     popd
 }
 
