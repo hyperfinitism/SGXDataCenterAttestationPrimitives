@@ -1,10 +1,12 @@
 /*
- * Copyright(c) 2011-2025 Intel Corporation
+ * Copyright(c) 2011-2026 Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <stddef.h>
 #include <sys/socket.h>
 #include <linux/vm_sockets.h>
+#include <sys/un.h>
 #include "qgs_msg_lib.h"
 
 #include <stdint.h>
@@ -15,6 +17,8 @@
 
 
 static const unsigned HEADER_SIZE = 4;
+#define QGS_UNIX_SOCKET_FILE "/var/run/tdx-qgs/qgs.socket"
+#define VSOCK_PORT 4050
 
 #define HEX_DUMP_SIZE 16
 static void print_hex_dump(const char *title, const char *prefix_str,
@@ -39,27 +43,73 @@ static void print_hex_dump(const char *title, const char *prefix_str,
     fprintf(stdout, "\n");
 }
 
-int test_raw_request(void)
+static int connect_qgs_socket(void)
+{
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+
+    if (strlen(QGS_UNIX_SOCKET_FILE) >= sizeof(addr.sun_path)) {
+        fprintf(stderr, "\nUNIX socket path too long: %s\n", QGS_UNIX_SOCKET_FILE);
+        return -1;
+    }
+
+    strncpy(addr.sun_path, QGS_UNIX_SOCKET_FILE, sizeof(addr.sun_path) - 1);
+
+    int s = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (s < 0) {
+        perror("socket(AF_UNIX)");
+        return -1;
+    }
+
+    socklen_t addr_len = (socklen_t)(offsetof(struct sockaddr_un, sun_path) +
+                                     strlen(addr.sun_path) + 1);
+    if (connect(s, (struct sockaddr *)&addr, addr_len) < 0) {
+        perror("connect(AF_UNIX)");
+        close(s);
+        return -1;
+    }
+    return s;
+}
+
+static int connect_qgs_vsock(void)
 {
 
     int s = socket(AF_VSOCK, SOCK_STREAM, 0);
     if (-1 == s)
     {
         fprintf(stderr, "\nsocket return 0x%x\n", s);
-        return 1;
+        return -1;
     }
     struct sockaddr_vm vm_addr;
     memset(&vm_addr, 0, sizeof(vm_addr));
     vm_addr.svm_family = AF_VSOCK;
     vm_addr.svm_reserved1 = 0;
-    vm_addr.svm_port = 4050;
+    vm_addr.svm_port = VSOCK_PORT;
     vm_addr.svm_cid = VMADDR_CID_HOST;
     if (connect(s, (struct sockaddr *)&vm_addr, sizeof(vm_addr)))
     {
         fprintf(stderr, "\nconnect error\n");
         close(s);
-        return 1;
+        return -1;
     }
+    return s;
+}
+
+static int test_raw_request(void)
+{
+    fprintf(stderr, "\nConnecting to unix domain socket at %s ... \n", QGS_UNIX_SOCKET_FILE);
+    int s = connect_qgs_socket();
+    if (s < 0) {
+        fprintf(stderr, "failed\n");
+        fprintf(stderr, "\nConnecting to vsock at port %d ... \n", VSOCK_PORT);
+        s = connect_qgs_vsock();
+        if (s < 0) {
+            fprintf(stderr, "failed\n");
+                return 1;
+        }
+    }
+    fprintf(stderr, "success\n");
 
     uint8_t report[1024] = {0};
     report[0] = 0x81;
@@ -87,7 +137,6 @@ int test_raw_request(void)
     close(s);
     return 0;
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -132,22 +181,13 @@ int main(int argc, char *argv[])
     memcpy(buf + HEADER_SIZE, p_req, msg_size);
     qgs_msg_free(p_req);
 
-    s = socket(AF_VSOCK, SOCK_STREAM, 0);
-    if (-1 == s) {
-        fprintf(stderr, "\nsocket return 0x%x\n", s);
-        ret = 1;
-        goto ret_point;
-    }
-    struct sockaddr_vm vm_addr;
-    memset(&vm_addr, 0, sizeof(vm_addr));
-    vm_addr.svm_family = AF_VSOCK;
-    vm_addr.svm_reserved1 = 0;
-    vm_addr.svm_port = 4050;
-    vm_addr.svm_cid = VMADDR_CID_HOST;
-    if (connect(s, (struct sockaddr *)&vm_addr, sizeof(vm_addr))) {
-        fprintf(stderr, "\nconnect error\n");
-        ret = 1;
-        goto ret_point;
+    s = connect_qgs_socket();
+    if (s < 0) {
+        s = connect_qgs_vsock();
+        if (s < 0) {
+            ret = 1;
+            goto ret_point;
+        }
     }
 
     // Write to socket
@@ -178,8 +218,8 @@ int main(int argc, char *argv[])
     while( recieved_bytes < in_msg_size) {
         int recv_ret = (int)recv(s, buf + HEADER_SIZE + recieved_bytes,
                                     in_msg_size - recieved_bytes, 0);
-        if (recv_ret < 0) {
-            fprintf(stderr, "\nrecv return value < 0");
+        if (recv_ret <= 0) {
+            fprintf(stderr, "\nrecv return value <= 0");
             ret = 1;
             goto ret_point;
         }
@@ -219,3 +259,4 @@ ret_point:
 
     return ret;
 }
+
