@@ -15,8 +15,10 @@
 
 typedef struct _network_malloc_info_t {
     char *base;
-    uint32_t size;
+    size_t size;
 } network_malloc_info_t;
+
+#define HTTP_DOWNLOAD_MAX_SIZE (100 * 1024 * 1024) // HTTP response must not exceed 100 MB
 
 #define LIBCURL_NAME "libcurl.so"
 #define LIBCURL4_NAME LIBCURL_NAME".4"
@@ -140,26 +142,32 @@ sgx_qcnl_error_t prepare_curl() {
 
 static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream) {
     network_malloc_info_t *s = reinterpret_cast<network_malloc_info_t *>(stream);
-    uint32_t start = 0;
+    if (size == 0 || nmemb == 0) return 0;
+    if (size > HTTP_DOWNLOAD_MAX_SIZE / nmemb) return 0;
+    size_t chunk = size * nmemb;
+    size_t start = 0;
+
     if (s->base == NULL) {
-        s->base = reinterpret_cast<char *>(malloc(size * nmemb));
-        s->size = static_cast<uint32_t>(size * nmemb);
+        if (chunk > HTTP_DOWNLOAD_MAX_SIZE)
+            return 0;
+        s->base = reinterpret_cast<char *>(malloc(chunk));
+        s->size = chunk;
         if (s->base == NULL)
             return 0;
     } else {
-        uint32_t newsize = s->size + static_cast<uint32_t>(size * nmemb);
-        char *p = reinterpret_cast<char *>(realloc(s->base, newsize));
-        if (p == NULL) {
+        if (chunk > HTTP_DOWNLOAD_MAX_SIZE || s->size > HTTP_DOWNLOAD_MAX_SIZE - chunk)
             return 0;
-        }
+        size_t newsize = s->size + chunk;
+        char *p = reinterpret_cast<char *>(realloc(s->base, newsize));
+        if (p == NULL)
+            return 0;
         start = s->size;
         s->base = p;
         s->size = newsize;
     }
-    if (memcpy_s(s->base + start, s->size - start, ptr, size * nmemb) != 0) {
+    if (memcpy_s(s->base + start, s->size - start, ptr, chunk) != 0)
         return 0;
-    }
-    return size * nmemb;
+    return chunk;
 }
 
 /**
@@ -377,9 +385,9 @@ sgx_qcnl_error_t qcnl_https_request(const char *url,
         } while (true);
 
         *resp_msg = res_body.base;
-        resp_size = res_body.size;
+        resp_size = static_cast<uint32_t>(res_body.size);
         *resp_header = res_header.base;
-        header_size = res_header.size;
+        header_size = static_cast<uint32_t>(res_header.size);
 
         ret = SGX_QCNL_SUCCESS;
 
